@@ -120,6 +120,13 @@ describe('carnet', () => {
     expect(carnet.notes).toEqual([{ exercice: 'A1', note: 'garder le dos droit' }]);
     expect(carnet.reglages).toEqual({ frequence: { type: 'parSemaine', n: 2 } });
   });
+
+  it('keeps a note on an alternating pair, whose code has a slash', async () => {
+    const res = await call('PUT', `/api/notes/${encodeURIComponent('H/G')}`, { exercice: 'H/G', note: 'souffler' });
+    expect(res.status).toBeLessThan(300);
+    const { carnet } = (await call('GET', '/api/snapshot')).body;
+    expect(carnet.notes).toEqual([{ exercice: 'H/G', note: 'souffler' }]);
+  });
 });
 
 describe('export', () => {

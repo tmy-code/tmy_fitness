@@ -62,6 +62,7 @@ function NiveauActuel({ methode, carnet, niveau }: { methode: Methode; carnet: C
   return (
     <section>
       <h2>{niveau.nom}</h2>
+      {niveau.note ? <p className="consigne-note">{niveau.note}</p> : null}
       {niveau.parties.map((p) => (
         <div className={`card ${p.id === programme ? 'card-accent' : ''}`} key={p.id}>
           <h2>{p.nom}</h2>

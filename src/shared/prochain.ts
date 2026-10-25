@@ -39,21 +39,55 @@ export function prochainePartie(niveau: Niveau, carnet: Carnet): Partie {
   return niveau.parties[(index + 1) % niveau.parties.length]!;
 }
 
-/** For a workout spread over several days (Split), the Blocs already done in the current round. */
-export function blocsFaitsDepuisDebut(partie: Partie, entrainements: Entrainement[]): string[] {
-  let done = new Set<string>();
-  const passes = entrainements
+/**
+ * What a workout requires: each Bloc on its own, except that alternatives (same `choix`) form one group
+ * of which any Bloc will do. Optional Blocs are never required.
+ */
+export function blocsRequis(partie: Partie): string[][] {
+  const groupes = new Map<string, string[]>();
+  for (const b of partie.blocs) {
+    if (b.facultatif) continue;
+    const key = b.choix ?? `bloc:${b.id}`;
+    groupes.set(key, [...(groupes.get(key) ?? []), b.id]);
+  }
+  return [...groupes.values()];
+}
+
+function passesSur(partie: Partie, entrainements: Entrainement[]): Entrainement[] {
+  return entrainements
     .filter((e) => e.kind === 'entrainement' && e.termine && e.partie === partie.id)
     .sort((a, b) => a.date.localeCompare(b.date));
-  for (const e of passes) {
+}
+
+/** For a workout spread over several days (Split), the Blocs already done in the current round. */
+export function blocsFaitsDepuisDebut(partie: Partie, entrainements: Entrainement[]): string[] {
+  const requis = blocsRequis(partie);
+  let done = new Set<string>();
+  for (const e of passesSur(partie, entrainements)) {
     if (!e.blocs) {
       done = new Set();
       continue;
     }
     e.blocs.forEach((b) => done.add(b));
-    if (partie.blocs.every((b) => done.has(b.id))) done = new Set();
+    if (requis.every((groupe) => groupe.some((b) => done.has(b)))) done = new Set();
   }
   return [...done];
+}
+
+/**
+ * The Blocs to tick by default before an Entraînement: the required ones not yet done in this round,
+ * taking for each choice the alternative the trainee picked last time.
+ */
+export function blocsProposes(partie: Partie, entrainements: Entrainement[]): string[] {
+  const faits = blocsFaitsDepuisDebut(partie, entrainements);
+  const recents = passesSur(partie, entrainements).reverse();
+  const proposes: string[] = [];
+  for (const groupe of blocsRequis(partie)) {
+    if (groupe.some((b) => faits.includes(b))) continue;
+    const dernier = groupe.length > 1 ? recents.flatMap((e) => e.blocs ?? []).find((b) => groupe.includes(b)) : undefined;
+    proposes.push(dernier ?? groupe[0]!);
+  }
+  return partie.blocs.map((b) => b.id).filter((b) => proposes.includes(b));
 }
 
 /** Days between Entraînements for a Fréquence. */

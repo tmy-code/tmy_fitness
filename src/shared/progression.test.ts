@@ -81,6 +81,18 @@ describe('methode schema', () => {
     expect(enSecondes({ type: 'max' })).toBe(false);
   });
 
+  it('accepts alternating pairs, optional and alternative Blocs, and a Niveau note', () => {
+    const extended = structuredClone(m);
+    extended.exercices.push({ code: 'H/G', nom: 'Alternance démo' });
+    extended.niveaux[0]!.note = 'Note démo';
+    const bloc = extended.niveaux[0]!.parties[0]!.blocs[0]!;
+    bloc.facultatif = true;
+    bloc.choix = 'option';
+    bloc.consignes[0]!.exercice = 'H/G';
+    expect(methode.safeParse(extended).success).toBe(true);
+    expect(methode.safeParse({ ...extended, exercices: [...extended.exercices, { code: 'H/', nom: 'x' }] }).success).toBe(false);
+  });
+
   it('rejects unknown Exercices and broken references', () => {
     const broken = structuredClone(m);
     broken.niveaux[0]!.parties[0]!.blocs[0]!.consignes[0]!.exercice = 'Z9';

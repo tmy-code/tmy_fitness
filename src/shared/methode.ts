@@ -9,9 +9,12 @@ const seconds = z.number().int().min(0).max(3600);
 
 /**
  * An Exercice code: a letter, optionally followed by a number (A1, B3, E6, or B alone).
+ * Two Exercices done in alternation within one Consigne are joined by a slash (H/G, B3/B).
  * A few movements the book names without a code get an upper-case word instead (CANARD).
  */
-export const exerciceCode = z.string().regex(/^(?:[A-Z][0-9]*|[A-Z]{3,20})$/, 'code Exercice attendu (ex. A1, B)');
+export const exerciceCode = z
+  .string()
+  .regex(/^(?:[A-Z][0-9]*(?:\/[A-Z][0-9]*)*|[A-Z]{3,20})$/, 'code Exercice attendu (ex. A1, B, H/G)');
 
 /** What one Série aims for. */
 export const cible = z.discriminatedUnion('type', [
@@ -69,6 +72,10 @@ export const bloc = z.object({
   consignes: z.array(consigne).min(1),
   /** Rest before the next Bloc. */
   repos: seconds.optional(),
+  /** An optional Bloc: left out unless the trainee picks it, and never owed on a Split. */
+  facultatif: z.boolean().optional(),
+  /** Blocs sharing a `choix` are alternatives: the trainee does one of them. */
+  choix: id.optional(),
 });
 export type Bloc = z.infer<typeof bloc>;
 
@@ -95,6 +102,8 @@ export const niveau = z.object({
   organisation: z.enum(['programmes', 'seances', 'unique']),
   parties: z.array(partie).min(1),
   frequence: frequence.optional(),
+  /** What the book says about the Niveau as a whole: frequency changes, when to move on. */
+  note: text.optional(),
   page: z.number().int().min(1).optional(),
 });
 export type Niveau = z.infer<typeof niveau>;

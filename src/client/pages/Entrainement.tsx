@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { Carnet, Entrainement as EntrainementData, ExerciceFait } from '../../shared/carnet.ts';
 import { consigneEffective } from '../../shared/consigne.ts';
-import { enSecondes, type Cible, type Methode, type Niveau, type Partie } from '../../shared/methode.ts';
+import { enSecondes, type Bloc, type Cible, type Methode, type Niveau, type Partie } from '../../shared/methode.ts';
 import { objectifsDuJour } from '../../shared/objectif.ts';
 import type { Operation } from '../../shared/operations.ts';
-import { blocsFaitsDepuisDebut, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
+import { blocsFaitsDepuisDebut, blocsProposes, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { nouvelEntrainement, reposApres, serieCourante, suggestionsFin } from '../../shared/seance.ts';
 import { newId } from '../api.ts';
@@ -54,9 +54,15 @@ export function EntrainementPage({ methode, carnet }: { methode: Methode; carnet
 
 function Preparation({ methode, carnet, niveau, partie }: { methode: Methode; carnet: Carnet; niveau: Niveau; partie: Partie }) {
   const faits = blocsFaitsDepuisDebut(partie, carnet.entrainements);
-  const [blocs, setBlocs] = useState(() => partie.blocs.filter((b) => !faits.includes(b.id)).map((b) => b.id));
+  const [blocs, setBlocs] = useState(() => blocsProposes(partie, carnet.entrainements));
   const [coches, setCoches] = useState<number[]>([]);
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+  /** Ticking one alternative unticks the others of its choice. */
+  function toggleBloc(bloc: Bloc) {
+    if (blocs.includes(bloc.id) || !bloc.choix) return setBlocs(toggle(blocs, bloc.id));
+    const autres = partie.blocs.filter((b) => b.choix === bloc.choix).map((b) => b.id);
+    setBlocs([...blocs.filter((b) => !autres.includes(b)), bloc.id]);
+  }
 
   function commencer() {
     preparerSon();
@@ -87,7 +93,9 @@ function Preparation({ methode, carnet, niveau, partie }: { methode: Methode; ca
           {partie.blocs.map((b) => (
             <li key={b.id}>
               <label>
-                <input type="checkbox" checked={blocs.includes(b.id)} onChange={() => setBlocs(toggle(blocs, b.id))} /> {b.nom}
+                <input type="checkbox" checked={blocs.includes(b.id)} onChange={() => toggleBloc(b)} /> {b.nom}
+                {b.facultatif ? <span className="muted small"> · facultatif</span> : null}
+                {b.choix ? <span className="muted small"> · au choix</span> : null}
                 {faits.includes(b.id) ? <span className="muted small"> · déjà fait</span> : null}
               </label>
             </li>

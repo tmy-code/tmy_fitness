@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocsFaitsDepuisDebut, ligneFrequence, prochainePartie } from './prochain.ts';
+import { blocsFaitsDepuisDebut, blocsProposes, ligneFrequence, prochainePartie } from './prochain.ts';
 import { carnetDemo, demoMethode, entrainementDemo, niveauDemo } from './testing.ts';
 
 const m = demoMethode();
@@ -37,6 +37,29 @@ describe('prochainePartie', () => {
     const s1 = n2.parties[0]!;
     const half = entrainementDemo('2026-11-02', [], { niveau: 'demo-2', partie: s1.id, blocs: [] });
     expect(prochainePartie(n2, carnetDemo({ parcours: parcours('demo-2'), entrainements: [half] })).id).toBe('demo-2-s2');
+  });
+});
+
+describe('optional and alternative Blocs', () => {
+  // Demo Programme 1 with Dos and Jambes turned into alternatives, plus an optional copy of Haut.
+  const p1 = structuredClone(n1.parties[0]!);
+  p1.blocs[1]!.choix = 'option';
+  p1.blocs[2]!.choix = 'option';
+  p1.blocs.push({ ...structuredClone(p1.blocs[0]!), id: 'demo-1-p1-bonus', facultatif: true });
+  const day = (date: string, blocs: string[]) => entrainementDemo(date, [], { niveau: 'demo-1', partie: p1.id, blocs });
+
+  it('needs one Bloc of each choice and none of the optional ones to finish a round', () => {
+    expect(blocsFaitsDepuisDebut(p1, [day('2026-11-02', ['demo-1-p1-haut', 'demo-1-p1-jambes'])])).toEqual([]);
+    expect(blocsFaitsDepuisDebut(p1, [day('2026-11-02', ['demo-1-p1-haut', 'demo-1-p1-bonus'])])).toEqual([
+      'demo-1-p1-haut',
+      'demo-1-p1-bonus',
+    ]);
+  });
+
+  it('proposes the required Blocs, remembering the alternative picked last time', () => {
+    expect(blocsProposes(p1, [])).toEqual(['demo-1-p1-haut', 'demo-1-p1-dos']);
+    expect(blocsProposes(p1, [day('2026-11-02', ['demo-1-p1-haut', 'demo-1-p1-jambes'])])).toEqual(['demo-1-p1-haut', 'demo-1-p1-jambes']);
+    expect(blocsProposes(p1, [day('2026-11-02', ['demo-1-p1-haut'])])).toEqual(['demo-1-p1-dos']);
   });
 });
 
