@@ -1,0 +1,34 @@
+# --- The book's content: never commit (the repo is public, see docs/adr/0001) ---
+/private/
+
+# --- Personal data: never commit ---
+# Runtime data lives on the NAS volume, never in the repo
+/data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+backups/
+*.csv
+
+# Secrets and machine-specific settings
+.env
+.env.*
+!.env.example
+
+# Book pages or documents dropped into the working copy by mistake
+*.pdf
+*.epub
+
+# --- Build and tooling ---
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+*.log
+.DS_Store
+Thumbs.db
+.claude/settings.local.json

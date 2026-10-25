@@ -1,0 +1,631 @@
+:root {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #059669;
+  --accent-text: #ffffff;
+  --overdue: #b91c1c;
+  --overdue-bg: #fee2e2;
+  --soon: #92400e;
+  --soon-bg: #fef3c7;
+  --ok: #166534;
+  --ok-bg: #dcfce7;
+  --unknown: #374151;
+  --unknown-bg: #e5e7eb;
+  --pending: #1e40af;
+  --pending-bg: #dbeafe;
+  --topbar: #1f2937;
+  --topbar-text: #f9fafb;
+  /* Chart marks: checked with the dataviz palette validator for each surface. */
+  --chart: #059669;
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111827;
+    --surface: #1f2937;
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --border: #374151;
+    --accent: #10b981;
+    --accent-text: #111827;
+    --overdue: #fca5a5;
+    --overdue-bg: #450a0a;
+    --soon: #fcd34d;
+    --soon-bg: #451a03;
+    --ok: #86efac;
+    --ok-bg: #052e16;
+    --unknown: #d1d5db;
+    --unknown-bg: #374151;
+    --pending: #93c5fd;
+    --pending-bg: #172554;
+    --topbar: #030712;
+    --chart: #12a874;
+  }
+}
+
+/* On phones, dark mode is true black so OLED screens switch those pixels off; cards are told apart by borders.
+   Keyed on the touchscreen, so a desktop browser keeps the grey dark theme even in a narrow window. */
+@media (prefers-color-scheme: dark) and (pointer: coarse) {
+  :root {
+    --bg: #000000;
+    --surface: #000000;
+    --border: #2a2a2a;
+    --topbar: #000000;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.1rem;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px calc(32px + env(safe-area-inset-bottom));
+}
+
+section {
+  margin-bottom: 24px;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  background: var(--topbar);
+  color: var(--topbar-text);
+}
+
+.topbar h1 {
+  flex: 1;
+  font-size: 1.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.back {
+  font-size: 2rem;
+  line-height: 1;
+  text-decoration: none;
+  padding: 0 8px 4px 0;
+}
+
+.sync {
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sync-synced {
+  background: #14532d;
+  color: #dcfce7;
+}
+
+.sync-syncing {
+  background: #1e3a8a;
+  color: #dbeafe;
+}
+
+.sync-offline {
+  background: #7c2d12;
+  color: #ffedd5;
+}
+
+.card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-decoration: none;
+}
+
+.card > h2 + p,
+.card > p {
+  margin: 6px 0 0;
+}
+
+.card-accent {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
+.menu .card:first-child {
+  grid-column: 1 / -1;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.empty {
+  text-align: center;
+  padding: 32px 0;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.button-danger {
+  color: var(--overdue);
+}
+
+.button-small {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+}
+
+.button-block {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.button-big {
+  min-height: 64px;
+  font-size: 1.15rem;
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.field-label {
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  min-height: 44px;
+}
+
+.banner {
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+
+.banner-error {
+  background: var(--overdue-bg);
+  color: var(--overdue);
+}
+
+.banner-ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.banner-warn {
+  background: var(--soon-bg);
+  color: var(--soon);
+}
+
+.banner ul {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
+body > .banner {
+  max-width: 720px;
+  margin: 12px auto;
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.checklist li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.checklist input {
+  min-height: 0;
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+/* --- Entraînement --- */
+
+.series {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.series th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: left;
+  padding: 4px;
+}
+
+.series td {
+  padding: 8px 4px;
+  border-top: 1px solid var(--border);
+}
+
+.series tr.current td {
+  font-weight: 700;
+  background: var(--pending-bg);
+}
+
+.series tr.done td {
+  color: var(--muted);
+}
+
+.consigne-note {
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.perso-note {
+  font-size: 0.9rem;
+}
+
+.progression p {
+  margin: 8px 0 0;
+}
+
+.progression .actuel {
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.saisie .field-label {
+  text-align: center;
+}
+
+.saisie .link {
+  display: block;
+  margin: 4px auto 0;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.stepper button {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stepper output {
+  min-width: 3.5em;
+  text-align: center;
+  font-size: 2.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chrono,
+.repos {
+  text-align: center;
+}
+
+.chrono output,
+.repos output {
+  display: block;
+  font-size: 3.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.repos {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.repos output {
+  font-size: 5.5rem;
+}
+
+.resume {
+  padding-left: 18px;
+}
+
+.resume li {
+  margin: 6px 0;
+}
+
+/* --- Niveaux and Consignes --- */
+
+.choice {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.choice:disabled {
+  cursor: default;
+}
+
+.bloc-titre {
+  margin-top: 12px;
+}
+
+.ligne-consigne {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  text-decoration: none;
+}
+
+.departs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.departs input {
+  width: 72px;
+  text-align: center;
+}
+
+/* --- Progrès --- */
+
+.chart {
+  margin: 12px 0 0;
+}
+
+.chart figcaption {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: pan-y;
+}
+
+.chart-tooltip {
+  min-height: 1.5em;
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--chart);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.chart-dot {
+  fill: var(--chart);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.chart-marker {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart-crosshair {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.timeline {
+  list-style: none;
+  padding: 0 0 0 16px;
+  border-left: 2px solid var(--border);
+}
+
+.timeline li {
+  padding: 6px 0;
+}
+
+.timeline li.actuel strong {
+  color: var(--accent);
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  max-width: 320px;
+}
+
+.calendar-head {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.calendar-day {
+  display: inline-block;
+  aspect-ratio: 1;
+  min-width: 14px;
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.calendar-day.entrainement {
+  background: var(--chart);
+}
+
+.calendar-day.souplesse {
+  background: var(--pending);
+}
+
+.calendar-day.both {
+  background: linear-gradient(135deg, var(--chart) 50%, var(--pending) 50%);
+}
+
+.legend .calendar-day {
+  width: 12px;
+  vertical-align: middle;
+  margin: 0 4px 0 8px;
+}
+
+input.num {
+  width: 72px;
+  text-align: center;
+}
+
+.series input.num {
+  min-height: 36px;
+  padding: 4px;
+}

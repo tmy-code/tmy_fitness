@@ -1,0 +1,13 @@
+# For Synology Container Manager: Project > Create > paste this file.
+# Adjust the left side of "volumes" to a folder on your NAS, and the left side of "ports" if 3011 is taken.
+services:
+  fitness:
+    image: ghcr.io/tmy-code/tmy_fitness:latest
+    # Without this, "Build" in Container Manager reuses the image already on the NAS.
+    pull_policy: always
+    container_name: tmy-fitness
+    restart: unless-stopped
+    ports:
+      - "3011:3000"
+    volumes:
+      - /volume1/docker/tmy-fitness:/data

@@ -1,0 +1,198 @@
+{
+  "nom": "Méthode de démonstration (contenu inventé)",
+  "exercices": [
+    { "code": "A", "nom": "Pompes démo" },
+    { "code": "A1", "nom": "Pompes démo, mains surélevées" },
+    { "code": "A2", "nom": "Pompes démo, sur les genoux" },
+    { "code": "C1", "nom": "Tirage démo, facile" },
+    { "code": "C2", "nom": "Tirage démo, moyen" },
+    { "code": "C3", "nom": "Tirage démo, difficile" },
+    { "code": "E1", "nom": "Chaise démo contre le mur" },
+    { "code": "F1", "nom": "Fentes démo" },
+    { "code": "P1", "nom": "Gainage démo" }
+  ],
+  "echauffement": ["Quelques étirements rapides", "3 minutes de cardio léger", "2 séries légères de pompes"],
+  "tests": [
+    {
+      "id": "test-haut",
+      "nom": "Test haut du corps",
+      "etapes": [
+        { "id": "th-1", "exercice": "A2", "cible": { "type": "reps", "n": 10 }, "siReussi": { "etape": "th-2" }, "siEchec": { "niveau": "demo-0" } },
+        { "id": "th-2", "exercice": "A1", "cible": { "type": "reps", "n": 10 }, "siReussi": { "etape": "th-3" }, "siEchec": { "niveau": "demo-1", "partie": "demo-1-p1" } },
+        { "id": "th-3", "exercice": "A", "cible": { "type": "reps", "n": 20 }, "note": "Aller au maximum.", "siReussi": { "niveau": "demo-2" }, "siEchec": { "niveau": "demo-1", "partie": "demo-1-p2" } }
+      ]
+    },
+    {
+      "id": "test-dos",
+      "nom": "Test dos",
+      "etapes": [
+        { "id": "td-1", "exercice": "C1", "cible": { "type": "reps", "n": 12 }, "siReussi": { "etape": "td-2" }, "siEchec": { "fin": true } },
+        { "id": "td-2", "exercice": "C2", "cible": { "type": "reps", "n": 12 }, "siReussi": { "etape": "td-3" }, "siEchec": { "fin": true } },
+        { "id": "td-3", "exercice": "C3", "cible": { "type": "max" }, "siReussi": { "fin": true }, "siEchec": { "fin": true } }
+      ]
+    },
+    {
+      "id": "test-jambes",
+      "nom": "Test jambes",
+      "etapes": [
+        { "id": "tj-1", "exercice": "E1", "cible": { "type": "duree", "secondes": 60 }, "siReussi": { "fin": true }, "siEchec": { "fin": true } }
+      ]
+    }
+  ],
+  "niveaux": [
+    {
+      "id": "demo-0",
+      "nom": "Niveau démo Découverte",
+      "organisation": "unique",
+      "frequence": { "type": "parSemaine", "n": 2 },
+      "parties": [
+        {
+          "id": "demo-0-u",
+          "nom": "Séance unique",
+          "blocs": [
+            {
+              "id": "demo-0-haut",
+              "nom": "Bloc Haut",
+              "repos": 180,
+              "consignes": [
+                { "id": "demo-0-a2", "exercice": "A2", "series": [{ "cible": { "type": "reps", "n": 3 }, "repos": 60 }, { "cible": { "type": "reps", "n": 3 }, "repos": 60 }] }
+              ]
+            },
+            {
+              "id": "demo-0-jambes",
+              "nom": "Bloc Jambes",
+              "consignes": [
+                { "id": "demo-0-e1", "exercice": "E1", "series": [{ "cible": { "type": "duree", "secondes": 30 }, "repos": 90 }] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "demo-1",
+      "nom": "Niveau démo 1",
+      "organisation": "programmes",
+      "frequence": { "type": "parSemaine", "n": 3 },
+      "parties": [
+        {
+          "id": "demo-1-p1",
+          "nom": "Premier programme",
+          "passage": { "consigne": "demo-1-p1-a1", "condition": { "type": "series", "series": 3, "reps": 8 } },
+          "blocs": [
+            {
+              "id": "demo-1-p1-haut",
+              "nom": "Bloc Haut",
+              "repos": 180,
+              "consignes": [
+                {
+                  "id": "demo-1-p1-a1",
+                  "exercice": "A1",
+                  "rythme": "normal",
+                  "series": [
+                    { "cible": { "type": "reps", "n": 3 }, "repos": 90 },
+                    { "cible": { "type": "reps", "n": 3 }, "repos": 90 },
+                    { "cible": { "type": "reps", "n": 3 }, "repos": 90 }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "demo-1-p1-dos",
+              "nom": "Bloc Dos",
+              "repos": 180,
+              "consignes": [
+                {
+                  "id": "demo-1-p1-c",
+                  "exercice": "C1",
+                  "series": [
+                    { "cible": { "type": "reps", "n": 6 }, "repos": 90 },
+                    { "cible": { "type": "reps", "n": 6 }, "repos": 90 },
+                    { "cible": { "type": "reps", "n": 6 }, "repos": 90 }
+                  ],
+                  "progression": [
+                    { "exercice": "C1", "condition": { "type": "series", "series": 3, "reps": 12 } },
+                    { "exercice": "C2", "condition": { "type": "series", "series": 3, "reps": 12 }, "depart": [6, 6, 6] },
+                    { "exercice": "C3", "depart": [5, 5, 5] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "demo-1-p1-jambes",
+              "nom": "Bloc Jambes",
+              "consignes": [
+                { "id": "demo-1-p1-e1", "exercice": "E1", "note": "Remplacer par F1 en cas de gêne aux genoux.", "series": [{ "cible": { "type": "duree", "secondes": 60 }, "repos": 120 }, { "cible": { "type": "max" }, "repos": 60 }] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "demo-1-p2",
+          "nom": "Deuxième programme",
+          "blocs": [
+            {
+              "id": "demo-1-p2-haut",
+              "nom": "Bloc Haut",
+              "repos": 180,
+              "consignes": [
+                { "id": "demo-1-p2-a", "exercice": "A", "series": [{ "cible": { "type": "reps", "n": 5 }, "repos": 90 }, { "cible": { "type": "reps", "n": 5 }, "repos": 90 }, { "cible": { "type": "reps", "n": 5 }, "repos": 90 }] }
+              ]
+            },
+            {
+              "id": "demo-1-p2-taille",
+              "nom": "Bloc Taille",
+              "consignes": [
+                { "id": "demo-1-p2-p1", "exercice": "P1", "series": [{ "cible": { "type": "duree", "secondes": 30 }, "repos": 60 }, { "cible": { "type": "duree", "secondes": 30 }, "repos": 60 }] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "demo-2",
+      "nom": "Niveau démo 2",
+      "organisation": "seances",
+      "frequence": { "type": "tousLesJours", "n": 3 },
+      "parties": [
+        {
+          "id": "demo-2-s1",
+          "nom": "Séance 1",
+          "blocs": [
+            {
+              "id": "demo-2-s1-haut",
+              "nom": "Bloc Haut",
+              "consignes": [
+                { "id": "demo-2-s1-a", "exercice": "A", "rythme": "rapide", "note": "Dernière série : finir sur A1 près de l'échec.", "series": [{ "cible": { "type": "max" }, "repos": 30 }, { "cible": { "type": "max" }, "repos": 30 }, { "cible": { "type": "max" }, "repos": 60 }] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "demo-2-s2",
+          "nom": "Séance 2",
+          "blocs": [
+            {
+              "id": "demo-2-s2-dos",
+              "nom": "Bloc Dos",
+              "consignes": [
+                { "id": "demo-2-s2-c3", "exercice": "C3", "series": [{ "cible": { "type": "reps", "n": 8 }, "repos": 90 }, { "cible": { "type": "reps", "n": 8 }, "repos": 90 }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "souplesse": [
+    {
+      "id": "souplesse-demo",
+      "nom": "Routine démo du soir",
+      "etirements": [
+        { "nom": "Étirement démo des épaules", "secondes": 30 },
+        { "nom": "Étirement démo des jambes", "secondes": 45 }
+      ]
+    }
+  ]
+}

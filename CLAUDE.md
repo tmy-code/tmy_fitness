@@ -1,0 +1,13 @@
+# TMY Fitness
+
+Domain vocabulary: [CONTEXT.md](CONTEXT.md). Architecture decisions: [docs/adr/](docs/adr/). The app is French only and uses the glossary's terms on screen; code uses the same terms without accents (`niveau`, `seance`, `entrainement`).
+
+## This repository is public: no book content and no personal data, ever
+
+The owner is not technical and relies on these rules being followed in every commit.
+
+- **No content from *Access Autonomy*** (ADR 0001): no transcribed Niveaux, Séances, Programmes, Consignes, Tests, routines, exercise descriptions, photos or page images, not even in tests or fixtures. Tests and the dev server use the made-up Méthode in [demo/](demo/). The real Méthode file lives in the git-ignored `private/` folder and on the NAS only. Exercise names shown in the app are written in our own words.
+- **No personal data**: no names, emails, real training history or Carnet exports. Use obviously fake values.
+- **No infrastructure details or secrets in code**: server hostnames (including the Tailscale address), tokens and passwords come from environment variables set on the NAS. Document new variables in `.env.example` with placeholder values only.
+- **Runtime data stays out of git**: the SQLite database, backups and `private/` are ignored by `.gitignore`. Never weaken those ignore rules.
+- **Before every commit**, check the staged diff for anything above. If book content or personal data was ever committed, stop and tell the owner — deleting the file does not remove it from git history.
