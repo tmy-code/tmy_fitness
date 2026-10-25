@@ -79,8 +79,11 @@ export function AjusterPage({ methode, carnet, consigneId }: { methode: Methode;
   if (!lieu || !base) return <NotFound what="Consigne" />;
 
   const setSerie = (i: number, patch: Partial<SerieConsigne>) => setSeries(series.map((s, j) => (j === i ? { ...s, ...patch } : s)));
-  const setCible = (i: number, type: Cible['type'], value: number) =>
-    setSerie(i, { cible: type === 'reps' ? { type, n: Math.max(1, value) } : type === 'duree' ? { type, secondes: Math.max(1, value) } : { type: 'max' } });
+  const setCible = (i: number, type: Cible['type'] | 'max-s', value: number) =>
+    setSerie(i, {
+      cible:
+        type === 'reps' ? { type, n: Math.max(1, value) } : type === 'duree' ? { type, secondes: Math.max(1, value) } : type === 'max-s' ? { type: 'max', secondes: true } : { type: 'max' },
+    });
 
   function enregistrer() {
     const data: Ajustement = { consigne: consigneId, series, rythme: rythme.trim() || undefined, increment, note: note.trim() || undefined };
@@ -95,9 +98,13 @@ export function AjusterPage({ methode, carnet, consigneId }: { methode: Methode;
         <section className="card" key={i}>
           <p className="eyebrow">Série {i + 1}</p>
           <div className="row-actions">
-            <select value={s.cible.type} onChange={(e) => setCible(i, e.target.value as Cible['type'], s.cible.type === 'reps' ? s.cible.n : s.cible.type === 'duree' ? s.cible.secondes : 10)}>
+            <select
+              value={s.cible.type === 'max' && s.cible.secondes ? 'max-s' : s.cible.type}
+              onChange={(e) => setCible(i, e.target.value as Cible['type'] | 'max-s', s.cible.type === 'reps' ? s.cible.n : s.cible.type === 'duree' ? s.cible.secondes : 10)}
+            >
               <option value="reps">Répétitions</option>
               <option value="max">Max</option>
+              <option value="max-s">Max (durée)</option>
               <option value="duree">Durée (s)</option>
             </select>
             {s.cible.type !== 'max' ? (

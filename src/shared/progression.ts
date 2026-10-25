@@ -34,7 +34,8 @@ export function suggestionProgression(consigne: Consigne, fait: ExerciceFait): S
 export function suggestionProgramme(niveau: Niveau, partie: Partie, faits: ExerciceFait[]): Suggestion | null {
   if (niveau.organisation !== 'programmes' || !partie.passage) return null;
   const suivant = niveau.parties[niveau.parties.findIndex((p) => p.id === partie.id) + 1];
-  const fait = faits.find((f) => f.ref === partie.passage!.consigne);
+  const { consigne, exercice } = partie.passage;
+  const fait = faits.find((f) => f.ref === consigne && (!exercice || f.exercice === exercice));
   if (!suivant || !fait || conditionAtteinte(partie.passage.condition, fait.series) !== true) return null;
   return { kind: 'programme', vers: suivant.id, libelle: `Objectif atteint ✓ — passer au ${suivant.nom} ?` };
 }

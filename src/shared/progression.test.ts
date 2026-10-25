@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { methode } from './methode.ts';
+import { enSecondes, methode } from './methode.ts';
 import { conditionAtteinte, suggestionProgramme, suggestionProgression } from './progression.ts';
 import { conclusionTests, deroulerTest, exercicesDeDepart } from './tests.ts';
 import { consigneDemo, demoMethode, fait, niveauDemo } from './testing.ts';
@@ -34,6 +34,14 @@ describe('suggestions', () => {
     expect(suggestionProgramme(n1, p1, [fait('demo-1-p1-a1', 'A1', [[8, 8], [8, 8], [8, 9]])])?.vers).toBe('demo-1-p2');
     expect(suggestionProgramme(n1, p1, [fait('demo-1-p1-a1', 'A1', [[8, 8], [8, 7], [8, 9]])])).toBeNull();
   });
+
+  it('only counts the named Exercice when the passage names one', () => {
+    const n1 = structuredClone(niveauDemo(m, 'demo-1'));
+    const p1 = n1.parties[0]!;
+    p1.passage = { consigne: 'demo-1-p1-c', exercice: 'C3', condition: { type: 'series', series: 3, reps: 8 } };
+    expect(suggestionProgramme(n1, p1, [fait('demo-1-p1-c', 'C2', [[8, 8], [8, 8], [8, 8]])])).toBeNull();
+    expect(suggestionProgramme(n1, p1, [fait('demo-1-p1-c', 'C3', [[8, 8], [8, 8], [8, 8]])])?.vers).toBe('demo-1-p2');
+  });
 });
 
 describe('Tests', () => {
@@ -59,6 +67,20 @@ describe('Tests', () => {
 });
 
 describe('methode schema', () => {
+  it('accepts word codes and timed max Séries', () => {
+    const extended = structuredClone(m);
+    extended.exercices.push({ code: 'CANARD', nom: 'Marche démo' });
+    extended.niveaux[0]!.parties[0]!.blocs[1]!.consignes.push({
+      id: 'demo-0-canard',
+      exercice: 'CANARD',
+      increment: 1,
+      series: [{ cible: { type: 'max', secondes: true }, repos: 90 }],
+    });
+    expect(methode.safeParse(extended).success).toBe(true);
+    expect(enSecondes({ type: 'max', secondes: true })).toBe(true);
+    expect(enSecondes({ type: 'max' })).toBe(false);
+  });
+
   it('rejects unknown Exercices and broken references', () => {
     const broken = structuredClone(m);
     broken.niveaux[0]!.parties[0]!.blocs[0]!.consignes[0]!.exercice = 'Z9';

@@ -7,16 +7,25 @@ const id = z.string().min(1).max(64);
 const text = z.string().trim().min(1).max(2000);
 const seconds = z.number().int().min(0).max(3600);
 
-/** An Exercice code: a letter, optionally followed by a number (A1, B3, E6, or B alone). */
-export const exerciceCode = z.string().regex(/^[A-Z][0-9]*$/, 'code Exercice attendu (ex. A1, B)');
+/**
+ * An Exercice code: a letter, optionally followed by a number (A1, B3, E6, or B alone).
+ * A few movements the book names without a code get an upper-case word instead (CANARD).
+ */
+export const exerciceCode = z.string().regex(/^(?:[A-Z][0-9]*|[A-Z]{3,20})$/, 'code Exercice attendu (ex. A1, B)');
 
 /** What one Série aims for. */
 export const cible = z.discriminatedUnion('type', [
   z.object({ type: z.literal('reps'), n: z.number().int().min(1).max(500) }),
-  z.object({ type: z.literal('max') }),
+  /** As many répétitions as possible, or — with `secondes` — held as long as possible. */
+  z.object({ type: z.literal('max'), secondes: z.literal(true).optional() }),
   z.object({ type: z.literal('duree'), secondes: z.number().int().min(1).max(3600) }),
 ]);
 export type Cible = z.infer<typeof cible>;
+
+/** Whether a Série is measured in seconds rather than répétitions. */
+export function enSecondes(c: Cible): boolean {
+  return c.type === 'duree' || (c.type === 'max' && c.secondes === true);
+}
 
 export const serieConsigne = z.object({
   cible,
@@ -68,8 +77,8 @@ export const partie = z.object({
   id,
   nom: z.string().trim().min(1).max(100),
   blocs: z.array(bloc).min(1),
-  /** For a Programme: the target on one Consigne that unlocks the next Programme. */
-  passage: z.object({ consigne: id, condition }).optional(),
+  /** For a Programme: the target on one Consigne (and, if given, on one Exercice of it) that unlocks the next Programme. */
+  passage: z.object({ consigne: id, exercice: exerciceCode.optional(), condition }).optional(),
 });
 export type Partie = z.infer<typeof partie>;
 

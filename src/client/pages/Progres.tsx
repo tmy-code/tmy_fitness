@@ -1,6 +1,6 @@
 import { useState, type PointerEvent } from 'react';
 import type { Carnet } from '../../shared/carnet.ts';
-import type { Methode } from '../../shared/methode.ts';
+import { enSecondes, type Methode } from '../../shared/methode.ts';
 import { dureesParcours, exercicesPratiques, marqueursReprise, progresExercice, type PointProgres } from '../../shared/progres.ts';
 import { Layout } from '../components.tsx';
 import { formatDate, pluriel, todayIso } from '../format.ts';
@@ -12,7 +12,7 @@ export function ProgresPage({ methode, carnet }: { methode: Methode; carnet: Car
   // Results are seconds when the Exercice was done for a Consigne whose Séries are all timed.
   const lieux = indexConsignes(methode);
   const refs = new Set(carnet.entrainements.flatMap((e) => e.exercices.filter((x) => x.exercice === exercice).map((x) => x.ref)));
-  const timed = [...refs].some((ref) => lieux.get(ref)?.consigne.series.every((s) => s.cible.type === 'duree'));
+  const timed = [...refs].some((ref) => lieux.get(ref)?.consigne.series.every((s) => enSecondes(s.cible)));
   return (
     <Layout title="Progrès" back="/">
       <section>

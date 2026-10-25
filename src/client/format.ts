@@ -1,4 +1,4 @@
-import type { Cible } from '../shared/methode.ts';
+import { enSecondes, type Cible } from '../shared/methode.ts';
 
 /** Today's date on the phone, as YYYY-MM-DD in local time. */
 export function todayIso(now = new Date()): string {
@@ -28,14 +28,14 @@ export function formatChrono(seconds: number): string {
 
 export function formatCible(cible: Cible): string {
   if (cible.type === 'reps') return `${cible.n} rép.`;
-  if (cible.type === 'max') return 'max';
+  if (cible.type === 'max') return cible.secondes ? 'max (durée)' : 'max';
   return formatDuree(cible.secondes);
 }
 
 /** A Série's number in its unit: répétitions, or a duration for timed Séries. */
 export function formatValeur(cible: Cible, value: number | null): string {
   if (value === null) return '—';
-  return cible.type === 'duree' ? formatDuree(value) : String(value);
+  return enSecondes(cible) ? formatDuree(value) : String(value);
 }
 
 export function pluriel(n: number, one: string, many: string): string {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Carnet, Entrainement } from '../../shared/carnet.ts';
-import type { Methode, Test } from '../../shared/methode.ts';
+import { enSecondes, type Methode, type Test } from '../../shared/methode.ts';
 import type { Operation } from '../../shared/operations.ts';
 import { conclusionTests, deroulerTest, exercicesDeDepart, type DeroulementTest } from '../../shared/tests.ts';
 import { newId } from '../api.ts';
@@ -140,7 +140,7 @@ function conclusionEtape(methode: Methode, issue: DeroulementTest['issue'], dern
 }
 
 function EtapeEnCours({ methode, etape, numero, onValider }: { methode: Methode; etape: Test['etapes'][number]; numero: number; onValider: (r: number) => void }) {
-  const timed = etape.cible.type === 'duree';
+  const timed = enSecondes(etape.cible);
   const [value, setValue] = useState(etape.cible.type === 'reps' ? etape.cible.n : etape.cible.type === 'duree' ? etape.cible.secondes : 0);
   const page = pageExercice(methode, etape.exercice);
   return (
@@ -152,7 +152,7 @@ function EtapeEnCours({ methode, etape, numero, onValider }: { methode: Methode;
         {page ? ` · Descriptif p. ${page}` : ''}
       </p>
       {etape.note ? <p className="consigne-note">{etape.note}</p> : null}
-      {etape.cible.type === 'duree' ? <Chrono secondes={etape.cible.secondes} onFin={setValue} /> : null}
+      {timed ? <Chrono secondes={etape.cible.type === 'duree' ? etape.cible.secondes : undefined} onFin={setValue} /> : null}
       <p className="field-label">{timed ? 'Tenu' : 'Répétitions faites'}</p>
       <Stepper value={value} onChange={setValue} step={timed ? 5 : 1} format={timed ? formatDuree : undefined} />
       <button

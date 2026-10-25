@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Carnet, Entrainement as EntrainementData, ExerciceFait } from '../../shared/carnet.ts';
 import { consigneEffective } from '../../shared/consigne.ts';
-import type { Methode, Niveau, Partie } from '../../shared/methode.ts';
+import { enSecondes, type Cible, type Methode, type Niveau, type Partie } from '../../shared/methode.ts';
 import { objectifsDuJour } from '../../shared/objectif.ts';
 import type { Operation } from '../../shared/operations.ts';
 import { blocsFaitsDepuisDebut, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
@@ -178,7 +178,7 @@ function EnCours({
       <SaisieSerie
         key={`${e.id}-${position.exercice}-${position.serie}`}
         cible={cible}
-        initial={serie.objectif ?? aBattre ?? (cible.type === 'duree' ? cible.secondes : 0)}
+        initial={serie.objectif ?? aBattre ?? 0}
         onValider={(resultat, forcees) => {
           preparerSon();
           const rest = reposApres(partie, e, position.exercice, position.serie, carnet);
@@ -266,14 +266,14 @@ function Progression({ methode, consigne, exercice }: { methode: Methode; consig
   );
 }
 
-function SaisieSerie({ cible, initial, onValider }: { cible: { type: string }; initial: number; onValider: (resultat: number, forcees: number) => void }) {
+function SaisieSerie({ cible, initial, onValider }: { cible: Cible; initial: number; onValider: (resultat: number, forcees: number) => void }) {
   const [value, setValue] = useState(initial);
   const [forcees, setForcees] = useState(0);
   const [showForcees, setShowForcees] = useState(false);
-  const timed = cible.type === 'duree';
+  const timed = enSecondes(cible);
   return (
     <section className="card saisie">
-      {timed ? <Chrono secondes={initial} onFin={(s) => setValue(s)} /> : null}
+      {timed ? <Chrono secondes={cible.type === 'duree' ? initial : undefined} onFin={(s) => setValue(s)} /> : null}
       <p className="field-label">{timed ? 'Tenu' : 'Répétitions'}</p>
       <Stepper value={value} onChange={setValue} step={timed ? 5 : 1} format={timed ? formatDuree : undefined} />
       {showForcees ? (
@@ -293,8 +293,11 @@ function SaisieSerie({ cible, initial, onValider }: { cible: { type: string }; i
   );
 }
 
-/** A hold timer for timed Séries: counts down the target, then signals. */
-export function Chrono({ secondes, onFin }: { secondes: number; onFin: (s: number) => void }) {
+/**
+ * A hold timer for timed Séries: counts down the target, then signals.
+ * Without a target ("as long as possible") it counts up until stopped.
+ */
+export function Chrono({ secondes, onFin }: { secondes?: number; onFin: (s: number) => void }) {
   const [debut, setDebut] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -304,7 +307,7 @@ export function Chrono({ secondes, onFin }: { secondes: number; onFin: (s: numbe
   }, [debut]);
   const ecoule = debut === null ? 0 : (now - debut) / 1000;
   useEffect(() => {
-    if (debut !== null && ecoule >= secondes) {
+    if (debut !== null && secondes !== undefined && ecoule >= secondes) {
       signalFinRepos();
       onFin(secondes);
       setDebut(null);
@@ -321,12 +324,12 @@ export function Chrono({ secondes, onFin }: { secondes: number; onFin: (s: numbe
           setDebut(Date.now());
         }}
       >
-        ▶ Démarrer le chrono ({formatDuree(secondes)})
+        ▶ Démarrer le chrono{secondes !== undefined ? ` (${formatDuree(secondes)})` : ''}
       </button>
     );
   return (
     <div className="chrono">
-      <output>{formatChrono(secondes - ecoule)}</output>
+      <output>{formatChrono(secondes !== undefined ? secondes - ecoule : ecoule)}</output>
       <button
         type="button"
         className="button button-small"
