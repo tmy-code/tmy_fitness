@@ -16,10 +16,12 @@ const TIMEOUT_MS = 8000;
 export async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
+    // A Blob (a picture) is sent as raw bytes with its own type; everything else as JSON.
+    const raw = body instanceof Blob;
     res = await fetch(path, {
       method,
-      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: body === undefined ? undefined : { 'content-type': raw ? body.type : 'application/json' },
+      body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch {

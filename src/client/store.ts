@@ -1,13 +1,14 @@
 import { useSyncExternalStore } from 'react';
 import { get, set } from 'idb-keyval';
 import type { Carnet, Entrainement } from '../shared/carnet.ts';
-import type { Methode } from '../shared/methode.ts';
+import type { ImageExercice, Methode } from '../shared/methode.ts';
 import { applyOperations, enqueueOp, opRequest, type Operation } from '../shared/operations.ts';
 import { ApiError, NetworkError, request } from './api.ts';
 
 export interface Snapshot {
   methode: Methode | null;
   carnet: Carnet;
+  images: ImageExercice[];
 }
 
 /** The Entraînement in progress: kept on the phone only, and sent as a whole when finished. */
@@ -52,7 +53,8 @@ function update(patch: Partial<StoreState>) {
   const next = { ...state, ...patch };
   if ('serverSnapshot' in patch || 'outbox' in patch) {
     const s = next.serverSnapshot;
-    next.view = s ? { methode: s.methode, carnet: applyOperations(s.carnet, next.outbox) } : null;
+    // Copies saved before pictures existed have no list of them.
+    next.view = s ? { methode: s.methode, carnet: applyOperations(s.carnet, next.outbox), images: s.images ?? [] } : null;
   }
   state = next;
   listeners.forEach((l) => l());
@@ -93,6 +95,17 @@ async function fetchSnapshot() {
   const snapshot = await request<Snapshot>('GET', '/api/snapshot');
   update({ serverSnapshot: snapshot, reachable: true, contacted: true });
   await persist('snapshot', snapshot);
+  prechargerImages(snapshot.images);
+}
+
+/** Where a picture is served; the version makes each upload a new address, so cached copies never go stale. */
+export function imageUrl(image: ImageExercice): string {
+  return `/api/images/${encodeURIComponent(image.exercice)}?v=${encodeURIComponent(image.version)}`;
+}
+
+/** Fetches every picture once while in range, so the service worker has them for training offline. */
+function prechargerImages(images: ImageExercice[]) {
+  for (const image of images) void fetch(imageUrl(image)).catch(() => undefined);
 }
 
 /** Sends queued changes in order. Stops at the first network failure and keeps the rest for later. */

@@ -48,6 +48,15 @@ export const MIGRATIONS: string[] = [
   CREATE TABLE ajustements (consigne TEXT PRIMARY KEY, json TEXT NOT NULL);
   CREATE TABLE reglages (id INTEGER PRIMARY KEY CHECK (id = 1), json TEXT NOT NULL);
   `,
+  `
+  -- A picture the owner uploads for an Exercice (a photo of the book's description, a drawing…), one per Exercice code.
+  CREATE TABLE images (
+    exercice TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    data BLOB NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  `,
 ];
 
 function schemaVersion(db: DatabaseSync): number {

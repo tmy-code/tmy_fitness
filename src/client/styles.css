@@ -629,3 +629,74 @@ input.num {
   min-height: 36px;
   padding: 4px;
 }
+
+/* Exercice pictures: shown whole (never cropped), full screen on tap. */
+.photo {
+  display: block;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  max-height: 30vh;
+  object-fit: contain;
+}
+
+.photo-petite img {
+  max-height: 160px;
+}
+
+.photo-plein-ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  border: 0;
+  background: rgba(0, 0, 0, 0.92);
+  cursor: zoom-out;
+}
+
+.photo-plein-ecran img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+label.button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.liste-images {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.liste-images li {
+  border-top: 1px solid var(--border);
+}
+
+.liste-images .link {
+  width: 100%;
+  text-align: left;
+}
+
+.liste-images-detail {
+  padding-bottom: 8px;
+}
+
+.liste-images-detail .row-actions {
+  margin: 0;
+}

@@ -14,7 +14,7 @@ import {
   type Carnet,
   type Entrainement,
 } from '../shared/carnet.ts';
-import { methode, type Methode } from '../shared/methode.ts';
+import { methode, type ImageExercice, type Methode } from '../shared/methode.ts';
 import { exportCsv } from './csv.ts';
 
 type ErrorStatus = 400 | 404 | 409 | 413 | 422;
@@ -81,6 +81,16 @@ export function readCarnet(db: DatabaseSync): Carnet {
   };
 }
 
+/** Which Exercices have a picture, with a version that changes on each upload so the phone knows to fetch it again. */
+export function readImages(db: DatabaseSync): ImageExercice[] {
+  return (db.prepare('SELECT exercice, updated_at FROM images ORDER BY exercice').all() as Row[]).map((r) => ({
+    exercice: r.exercice as string,
+    version: r.updated_at as string,
+  }));
+}
+
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 export function createApp(db: DatabaseSync): Hono {
   const app = new Hono();
 
@@ -95,7 +105,7 @@ export function createApp(db: DatabaseSync): Hono {
     return c.json({ ok: true });
   });
 
-  app.get('/api/snapshot', (c) => c.json({ methode: readMethode(db), carnet: readCarnet(db) }));
+  app.get('/api/snapshot', (c) => c.json({ methode: readMethode(db), carnet: readCarnet(db), images: readImages(db) }));
 
   // The Méthode is the owner's transcription of the book; it replaces the previous one as a whole.
   app.put('/api/methode', bodyLimit({ maxSize: 5 * 1024 * 1024, onError: () => { throw new HttpError(413, 'Méthode trop volumineuse'); } }), async (c) => {
@@ -171,6 +181,32 @@ export function createApp(db: DatabaseSync): Hono {
     const data = await parse(c, noteExercice);
     samePath(c, data.exercice);
     db.prepare('INSERT INTO notes (exercice, note) VALUES (?, ?) ON CONFLICT (exercice) DO UPDATE SET note = excluded.note').run(data.exercice, data.note);
+    return c.body(null, 204);
+  });
+
+  // Pictures are sent as raw bytes, already shrunk by the phone.
+  app.put('/api/images/:id', bodyLimit({ maxSize: 3 * 1024 * 1024, onError: () => { throw new HttpError(413, 'Image trop volumineuse'); } }), async (c) => {
+    const type = (c.req.header('content-type') ?? '').split(';')[0]!.trim();
+    if (!IMAGE_TYPES.includes(type)) throw new HttpError(422, 'Image JPEG, PNG ou WebP attendue');
+    const data = new Uint8Array(await c.req.arrayBuffer());
+    if (data.length === 0) throw new HttpError(422, 'Image vide');
+    db.prepare(
+      'INSERT INTO images (exercice, type, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT (exercice) DO UPDATE SET type = excluded.type, data = excluded.data, updated_at = excluded.updated_at',
+    ).run(c.req.param('id'), type, data, now());
+    return c.body(null, 204);
+  });
+
+  app.get('/api/images/:id', (c) => {
+    const row = db.prepare('SELECT type, data FROM images WHERE exercice = ?').get(c.req.param('id')) as { type: string; data: Uint8Array<ArrayBuffer> } | undefined;
+    if (!row) throw new HttpError(404, 'Pas d’image pour cet exercice');
+    c.header('content-type', row.type);
+    // The app asks for "?v=<version>", so a given address never changes content.
+    c.header('cache-control', 'private, max-age=31536000, immutable');
+    return c.body(row.data);
+  });
+
+  app.delete('/api/images/:id', (c) => {
+    db.prepare('DELETE FROM images WHERE exercice = ?').run(c.req.param('id'));
     return c.body(null, 204);
   });
 

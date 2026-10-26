@@ -6,6 +6,7 @@ import { derniereReprise, objectifsDuJour } from '../../shared/objectif.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { newId } from '../api.ts';
 import { Layout, NotFound } from '../components.tsx';
+import { GererImage, PhotoExercice } from '../images.tsx';
 import { formatCible, formatDate, formatDuree, formatValeur, todayIso } from '../format.ts';
 import { indexConsignes, nomExercice } from '../lookup.ts';
 import { enqueue } from '../store.ts';
@@ -62,6 +63,13 @@ export function ConsignePage({ methode, carnet, consigneId }: { methode: Methode
           ))}
         </section>
       ) : null}
+
+      <section className="card">
+        <h2>Image de {exercice}</h2>
+        <p className="muted small">Une photo ou un schéma pour savoir quoi faire, affiché pendant l’entraînement.</p>
+        <PhotoExercice exercice={exercice} />
+        <GererImage exercice={exercice} />
+      </section>
 
       <Remplacement methode={methode} actuel={exercice} prevu={consigne.exercice} remplace={exercice !== consigne.exercice && etapeDe(consigne, exercice) === -1} onChoose={setExercice} />
       <MiniBoucle consigneId={consigne.id} series={consigne.series} objectifs={series.map((s) => s.objectif)} />

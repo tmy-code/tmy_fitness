@@ -3,6 +3,7 @@ import type { Ajustement, Carnet } from '../../shared/carnet.ts';
 import type { Cible, Frequence, Methode, SerieConsigne } from '../../shared/methode.ts';
 import { libelleFrequence, niveauActuel } from '../../shared/prochain.ts';
 import { Layout, NotFound } from '../components.tsx';
+import { GererImage, PhotoExercice } from '../images.tsx';
 import { indexConsignes, nomExercice } from '../lookup.ts';
 import { goBack } from '../router.ts';
 import { enqueue, useStore } from '../store.ts';
@@ -56,6 +57,8 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
         )}
       </section>
 
+      <ImagesExercices methode={methode} />
+
       <section className="card">
         <h2>Méthode</h2>
         <p className="muted small">
@@ -64,6 +67,37 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
         <ChargerMethode />
       </section>
     </Layout>
+  );
+}
+
+/** Every Exercice with its picture, to add them all in one place rather than as each one comes up. */
+function ImagesExercices({ methode }: { methode: Methode }) {
+  const { view } = useStore();
+  const [ouvert, setOuvert] = useState<string | null>(null);
+  const avecImage = new Set(view?.images.map((i) => i.exercice));
+  return (
+    <section className="card">
+      <h2>Images des exercices</h2>
+      <p className="muted small">
+        {avecImage.size} sur {methode.exercices.length} exercices ont une image. Touchez un exercice pour en ajouter une.
+      </p>
+      <ul className="liste-images">
+        {methode.exercices.map((e) => (
+          <li key={e.code}>
+            <button type="button" className="link" onClick={() => setOuvert(ouvert === e.code ? null : e.code)}>
+              {avecImage.has(e.code) ? '🖼 ' : ''}
+              {nomExercice(methode, e.code)}
+            </button>
+            {ouvert === e.code ? (
+              <div className="liste-images-detail">
+                <PhotoExercice exercice={e.code} petite />
+                <GererImage exercice={e.code} />
+              </div>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

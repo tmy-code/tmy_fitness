@@ -129,6 +129,36 @@ describe('carnet', () => {
   });
 });
 
+describe('images', () => {
+  // A few made-up bytes: the server stores the picture as sent and never decodes it.
+  const fakeJpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 0xff, 0xd9]);
+  const upload = (code: string, body: Uint8Array<ArrayBuffer>, type = 'image/jpeg') =>
+    app.request(`/api/images/${encodeURIComponent(code)}`, { method: 'PUT', headers: { 'content-type': type }, body });
+
+  it('stores one picture per Exercice, lists it in the snapshot and serves it back', async () => {
+    expect((await upload('H/G', fakeJpeg)).status).toBe(204);
+    const { images } = (await call('GET', '/api/snapshot')).body;
+    expect(images).toEqual([{ exercice: 'H/G', version: expect.any(String) }]);
+    const res = await app.request(`/api/images/${encodeURIComponent('H/G')}`);
+    expect(res.headers.get('content-type')).toBe('image/jpeg');
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(fakeJpeg);
+  });
+
+  it('replaces and deletes a picture', async () => {
+    await upload('A1', fakeJpeg);
+    await upload('A1', new Uint8Array([1, 2, 3]), 'image/png');
+    expect((await app.request('/api/images/A1')).headers.get('content-type')).toBe('image/png');
+    await call('DELETE', '/api/images/A1');
+    expect((await app.request('/api/images/A1')).status).toBe(404);
+    expect((await call('GET', '/api/snapshot')).body.images).toEqual([]);
+  });
+
+  it('refuses anything that is not a picture, and pictures that are too big', async () => {
+    expect((await upload('A1', fakeJpeg, 'application/pdf')).status).toBe(422);
+    expect((await upload('A1', new Uint8Array(4 * 1024 * 1024))).status).toBe(413);
+  });
+});
+
 describe('export', () => {
   it('writes one row per Série of finished Entraînements', async () => {
     await call('PUT', '/api/methode', demo);

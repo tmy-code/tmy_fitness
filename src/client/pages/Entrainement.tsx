@@ -11,6 +11,7 @@ import { newId } from '../api.ts';
 import { Layout, Stepper } from '../components.tsx';
 import { preparerSon, signalFinRepos, useEcranAllume } from '../device.ts';
 import { formatChrono, formatDuree, formatValeur, todayIso } from '../format.ts';
+import { PhotoExercice } from '../images.tsx';
 import { indexConsignes, nomExercice, pageExercice } from '../lookup.ts';
 import { navigate } from '../router.ts';
 import { enqueue, saveBrouillon, useStore, type Brouillon } from '../store.ts';
@@ -152,6 +153,7 @@ function EnCours({
         <p className="muted small">
           {[consigne.rythme ? `Rythme ${consigne.rythme}` : null, page ? `Descriptif p. ${page}` : null].filter(Boolean).join(' · ')}
         </p>
+        <PhotoExercice exercice={fait.exercice} />
         <Progression methode={methode} consigne={consigne} exercice={fait.exercice} />
         {consigne.note ? <p className="consigne-note">{consigne.note}</p> : null}
         {note ? <p className="perso-note">📝 {note}</p> : null}

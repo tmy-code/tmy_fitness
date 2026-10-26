@@ -116,6 +116,13 @@ export const exercice = z.object({
 });
 export type Exercice = z.infer<typeof exercice>;
 
+/** A picture the owner uploaded for an Exercice; stored on the server only, never in the Méthode file. */
+export interface ImageExercice {
+  exercice: string;
+  /** Changes on each upload. */
+  version: string;
+}
+
 /** Where a step of the Tests leads: another step, or a conclusion. */
 export const issueTest = z.union([
   z.object({ etape: id }),

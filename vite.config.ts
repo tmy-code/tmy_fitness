@@ -32,6 +32,18 @@ export default defineConfig({
         // The app shell is cached by the service worker; the Méthode and the Carnet are cached in IndexedDB by the app.
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
+        // Exercice pictures are cached here instead, so they show offline. Their address changes on each upload.
+        runtimeCaching: [
+          {
+            urlPattern: /\/api\/images\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-exercices',
+              expiration: { maxEntries: 400 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+        ],
       },
     }),
   ],
