@@ -1,6 +1,14 @@
 # TMY Fitness
 
-Domain vocabulary: [CONTEXT.md](CONTEXT.md). Architecture decisions: [docs/adr/](docs/adr/). The app is French only and uses the glossary's terms on screen; code uses the same terms without accents (`niveau`, `seance`, `entrainement`).
+## Docs: read only what the task needs
+
+| Doc | Read when |
+|---|---|
+| [CONTEXT.md](CONTEXT.md) | Writing code, API names or screen text (glossary) |
+| [docs/adr/](docs/adr/) | Changing what is stored where (book content), the single-trainee offline model or the Android app |
+| [docs/deploy.md](docs/deploy.md) | Installing or updating on the NAS |
+
+The app is French only and uses the glossary's terms on screen; code uses the same terms without accents (`niveau`, `seance`, `entrainement`).
 
 Naming: the project, package, container and NAS folder are snake_case (`tmy_fitness`); files are kebab-case (`test-helpers.ts`), except React component files in PascalCase (`Accueil.tsx`) and upper-case docs (`CONTEXT.md`).
 
