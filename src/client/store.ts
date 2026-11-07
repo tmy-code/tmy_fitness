@@ -4,7 +4,9 @@ import type { Carnet, Entrainement } from '../shared/carnet.ts';
 import type { ImageExercice, Methode } from '../shared/methode.ts';
 import { applyOperations, enqueueOp, opRequest, type Operation } from '../shared/operations.ts';
 import { ApiError, NetworkError, request, VersionError } from './api.ts';
-import { serverUrl } from './server.ts';
+import { isAndroidApp } from './native.ts';
+import { garderImages } from './image-cache.ts';
+import { serverAddress, setServerAddress } from './server.ts';
 
 export interface Snapshot {
   methode: Methode | null;
@@ -36,6 +38,8 @@ export interface StoreState {
   rejected: { op: Operation; reason: string }[];
   brouillon: Brouillon | null;
   loaded: boolean;
+  /** The server's address; '' in the browser, where the screens come from the server itself. */
+  serveur: string;
 }
 
 let state: StoreState = {
@@ -49,7 +53,13 @@ let state: StoreState = {
   rejected: [],
   brouillon: null,
   loaded: false,
+  serveur: serverAddress(),
 };
+
+/** The Android app does not know where the server is until its address is typed on first launch. */
+export function needsServerAddress(s: StoreState = state): boolean {
+  return isAndroidApp && s.serveur === '';
+}
 
 const listeners = new Set<() => void>();
 
@@ -99,22 +109,12 @@ async function fetchSnapshot() {
   const snapshot = await request<Snapshot>('GET', '/api/snapshot');
   update({ serverSnapshot: snapshot, reachable: true, contacted: true });
   await persist('snapshot', snapshot);
-  prechargerImages(snapshot.images);
-}
-
-/** Where a picture is served; the version makes each upload a new address, so cached copies never go stale. */
-export function imageUrl(image: ImageExercice): string {
-  return serverUrl(`/api/images/${encodeURIComponent(image.exercice)}?v=${encodeURIComponent(image.version)}`);
-}
-
-/** Fetches every picture once while in range, so the service worker has them for training offline. */
-function prechargerImages(images: ImageExercice[]) {
-  for (const image of images) void fetch(imageUrl(image)).catch(() => undefined);
+  void garderImages(snapshot.images);
 }
 
 /** Sends queued changes in order. Stops at the first network failure and keeps the rest for later. */
 async function flush(): Promise<void> {
-  if (state.syncing) return;
+  if (state.syncing || needsServerAddress()) return;
   update({ syncing: true });
   try {
     // Checks the API version before sending anything, so a queued change never reaches a server that would misread it.
@@ -169,6 +169,24 @@ export async function online<T>(method: string, path: string, body?: unknown): P
     if (error instanceof VersionError) update({ versionMismatch: error.behind });
     throw error;
   }
+}
+
+/**
+ * Checks that a server answers at this address with the same API version, then uses it. Throws a message for the
+ * screen otherwise. The offline copy is kept: it is the same server, reached another way.
+ */
+export async function connecterServeur(address: string): Promise<void> {
+  const previous = serverAddress();
+  setServerAddress(address);
+  try {
+    await request('GET', '/api/health');
+  } catch (error) {
+    setServerAddress(previous);
+    if (error instanceof VersionError) throw error;
+    throw new Error('Aucun serveur TMY Fitness ne répond à cette adresse. Vérifiez l’adresse et que Tailscale est connecté.');
+  }
+  update({ serveur: serverAddress(), versionMismatch: null });
+  await flush();
 }
 
 export async function saveBrouillon(brouillon: Brouillon | null): Promise<void> {

@@ -5,17 +5,20 @@ import { ConsignePage } from './pages/Consigne.tsx';
 import { EntrainementPage } from './pages/Entrainement.tsx';
 import { BouclePage, NiveauxPage } from './pages/Niveaux.tsx';
 import { ProgresPage } from './pages/Progres.tsx';
+import { PremierLancement } from './pages/Serveur.tsx';
 import { AjusterPage, ReglagesPage } from './pages/Reglages.tsx';
 import { RoutineRun, SouplessePage } from './pages/Souplesse.tsx';
 import { TestRun, TestsPage } from './pages/Tests.tsx';
 import { useRoute } from './router.ts';
-import { sync, useStore } from './store.ts';
+import { needsServerAddress, sync, useStore } from './store.ts';
 
 export function App() {
-  const { view, loaded, reachable, syncing } = useStore();
+  const store = useStore();
+  const { view, loaded, reachable, syncing } = store;
   const route = useRoute();
 
   if (!loaded) return null;
+  if (needsServerAddress(store)) return <PremierLancement />;
   if (!view) {
     return (
       <Layout title="TMY Fitness">

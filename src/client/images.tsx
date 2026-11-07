@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { NeedsConnection } from './components.tsx';
-import { imageUrl, online, useStore } from './store.ts';
+import type { ImageExercice } from '../shared/methode.ts';
+import { useImageSrc } from './image-cache.ts';
+import { online, useStore } from './store.ts';
 
 /** The picture uploaded for an Exercice, if any. */
 export function useImage(exercice: string) {
@@ -10,9 +12,13 @@ export function useImage(exercice: string) {
 /** The Exercice's picture; a tap shows it full screen, another tap closes it. */
 export function PhotoExercice({ exercice, petite = false }: { exercice: string; petite?: boolean }) {
   const image = useImage(exercice);
+  return image ? <Photo key={image.version} image={image} petite={petite} /> : null;
+}
+
+function Photo({ image, petite }: { image: ImageExercice; petite: boolean }) {
+  const { exercice } = image;
   const [grande, setGrande] = useState(false);
-  if (!image) return null;
-  const src = imageUrl(image);
+  const src = useImageSrc(image);
   return (
     <>
       <button type="button" className={`photo ${petite ? 'photo-petite' : ''}`} onClick={() => setGrande(true)} aria-label={`Agrandir l’image de ${exercice}`}>

@@ -1,11 +1,17 @@
 import { useEffect } from 'react';
+import { garderEcranAllume, isAndroidApp } from './native.ts';
 
 // Phone features used mid-workout: keeping the screen on, and signalling the end of a rest.
 
 /** Keeps the screen on while `active`, re-acquiring the lock when the app comes back to the foreground. */
 export function useEcranAllume(active: boolean): void {
   useEffect(() => {
-    if (!active || !('wakeLock' in navigator)) return;
+    if (!active) return;
+    if (isAndroidApp) {
+      void garderEcranAllume(true);
+      return () => void garderEcranAllume(false);
+    }
+    if (!('wakeLock' in navigator)) return;
     let lock: WakeLockSentinel | null = null;
     let cancelled = false;
     const acquire = async () => {

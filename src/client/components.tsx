@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Operation } from '../shared/operations.ts';
-import { dismissRejected, sync, useStore } from './store.ts';
+import { dismissRejected, needsServerAddress, sync, useStore } from './store.ts';
 
 export function Layout({ title, back, actions, children }: { title: string; back?: string; actions?: ReactNode; children: ReactNode }) {
   return (
@@ -23,7 +23,10 @@ export function Layout({ title, back, actions, children }: { title: string; back
 }
 
 function SyncBadge() {
-  const { outbox, reachable, contacted, syncing, versionMismatch } = useStore();
+  const store = useStore();
+  const { outbox, reachable, contacted, syncing, versionMismatch } = store;
+  // Nothing to sync with until the Android app knows the server's address.
+  if (needsServerAddress(store)) return null;
   const waiting = outbox.length;
   let label: string;
   let tone: string;

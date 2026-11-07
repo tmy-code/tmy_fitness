@@ -6,9 +6,11 @@ import { Layout, NotFound } from '../components.tsx';
 import { GererImage, PhotoExercice } from '../images.tsx';
 import { indexConsignes, nomExercice } from '../lookup.ts';
 import { goBack } from '../router.ts';
+import { isAndroidApp, ouvrirFichier } from '../native.ts';
 import { serverUrl } from '../server.ts';
 import { enqueue, useStore } from '../store.ts';
 import { ChargerMethode } from './Accueil.tsx';
+import { AdresseServeur } from './Serveur.tsx';
 
 export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Carnet }) {
   const { reachable } = useStore();
@@ -49,7 +51,11 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
       <section className="card">
         <h2>Exporter le Carnet</h2>
         <p className="muted small">Un fichier CSV, une ligne par série, lisible dans Excel ou Google Sheets.</p>
-        {reachable ? (
+        {reachable && isAndroidApp ? (
+          <button type="button" className="button button-block" onClick={() => void ouvrirFichier(serverUrl('/api/export.csv'))}>
+            Télécharger le CSV
+          </button>
+        ) : reachable ? (
           <a className="button button-block" href={serverUrl('/api/export.csv')} download>
             Télécharger le CSV
           </a>
@@ -57,6 +63,13 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
           <p className="banner banner-warn">Nécessite une connexion au serveur.</p>
         )}
       </section>
+
+      {isAndroidApp ? (
+        <section className="card">
+          <h2>Serveur</h2>
+          <AdresseServeur />
+        </section>
+      ) : null}
 
       <ImagesExercices methode={methode} />
 
