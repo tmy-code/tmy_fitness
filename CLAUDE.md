@@ -2,6 +2,8 @@
 
 Domain vocabulary: [CONTEXT.md](CONTEXT.md). Architecture decisions: [docs/adr/](docs/adr/). The app is French only and uses the glossary's terms on screen; code uses the same terms without accents (`niveau`, `seance`, `entrainement`).
 
+Naming: the project, package, container and NAS folder are snake_case (`tmy_fitness`); files are kebab-case (`test-helpers.ts`), except React component files in PascalCase (`Accueil.tsx`) and upper-case docs (`CONTEXT.md`).
+
 ## This repository is public: no book content and no personal data, ever
 
 The owner is not technical and relies on these rules being followed in every commit.
