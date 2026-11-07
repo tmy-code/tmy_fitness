@@ -3,7 +3,8 @@ import { get, set } from 'idb-keyval';
 import type { Carnet, Entrainement } from '../shared/carnet.ts';
 import type { ImageExercice, Methode } from '../shared/methode.ts';
 import { applyOperations, enqueueOp, opRequest, type Operation } from '../shared/operations.ts';
-import { ApiError, NetworkError, request } from './api.ts';
+import { ApiError, NetworkError, request, VersionError } from './api.ts';
+import { serverUrl } from './server.ts';
 
 export interface Snapshot {
   methode: Methode | null;
@@ -29,6 +30,8 @@ export interface StoreState {
   /** Whether the server has been reached since the app opened; until then "synced" would be a guess. */
   contacted: boolean;
   syncing: boolean;
+  /** Set when the server speaks another API version: the queue is kept, and nothing is sent until one side is updated. */
+  versionMismatch: VersionError['behind'] | null;
   /** Queued changes the server refused; shown so nothing disappears silently. */
   rejected: { op: Operation; reason: string }[];
   brouillon: Brouillon | null;
@@ -42,6 +45,7 @@ let state: StoreState = {
   reachable: true,
   contacted: false,
   syncing: false,
+  versionMismatch: null,
   rejected: [],
   brouillon: null,
   loaded: false,
@@ -100,7 +104,7 @@ async function fetchSnapshot() {
 
 /** Where a picture is served; the version makes each upload a new address, so cached copies never go stale. */
 export function imageUrl(image: ImageExercice): string {
-  return `/api/images/${encodeURIComponent(image.exercice)}?v=${encodeURIComponent(image.version)}`;
+  return serverUrl(`/api/images/${encodeURIComponent(image.exercice)}?v=${encodeURIComponent(image.version)}`);
 }
 
 /** Fetches every picture once while in range, so the service worker has them for training offline. */
@@ -113,6 +117,9 @@ async function flush(): Promise<void> {
   if (state.syncing) return;
   update({ syncing: true });
   try {
+    // Checks the API version before sending anything, so a queued change never reaches a server that would misread it.
+    await request('GET', '/api/health');
+    update({ versionMismatch: null });
     while (state.outbox.length > 0) {
       const op = state.outbox[0]!;
       const { method, path, body } = opRequest(op);
@@ -132,6 +139,7 @@ async function flush(): Promise<void> {
     await fetchSnapshot();
   } catch (error) {
     if (error instanceof NetworkError) update({ reachable: false });
+    else if (error instanceof VersionError) update({ reachable: true, contacted: true, versionMismatch: error.behind });
     else throw error;
   } finally {
     update({ syncing: false });
@@ -158,6 +166,7 @@ export async function online<T>(method: string, path: string, body?: unknown): P
     return result;
   } catch (error) {
     if (error instanceof NetworkError) update({ reachable: false });
+    if (error instanceof VersionError) update({ versionMismatch: error.behind });
     throw error;
   }
 }

@@ -15,6 +15,7 @@ export function Layout({ title, back, actions, children }: { title: string; back
         <SyncBadge />
         {actions}
       </header>
+      <VersionBanner />
       <RejectedBanner />
       <main>{children}</main>
     </>
@@ -22,11 +23,14 @@ export function Layout({ title, back, actions, children }: { title: string; back
 }
 
 function SyncBadge() {
-  const { outbox, reachable, contacted, syncing } = useStore();
+  const { outbox, reachable, contacted, syncing, versionMismatch } = useStore();
   const waiting = outbox.length;
   let label: string;
   let tone: string;
-  if (reachable && !contacted) {
+  if (versionMismatch) {
+    label = waiting > 0 ? `Bloqué · ${waiting} en attente` : 'Bloqué';
+    tone = 'offline';
+  } else if (reachable && !contacted) {
     label = 'Connexion…';
     tone = 'syncing';
   } else if (!reachable) {
@@ -69,6 +73,20 @@ function decrire(op: Operation): string {
     case 'reglages':
       return 'Réglages';
   }
+}
+
+/** The app and the server speak different API versions: changes stay on the phone until one is updated. */
+function VersionBanner() {
+  const { versionMismatch, outbox } = useStore();
+  if (!versionMismatch) return null;
+  const garde = outbox.length > 0 ? ' Vos modifications restent sur le téléphone en attendant.' : '';
+  return (
+    <p className="banner banner-warn" role="alert">
+      {versionMismatch === 'app'
+        ? `Mettez l’application à jour : elle n’est plus compatible avec le serveur.${garde}`
+        : `Le serveur n’est pas encore à jour pour cette version de l’application.${garde}`}
+    </p>
+  );
 }
 
 function RejectedBanner() {

@@ -6,6 +6,7 @@ import { Layout, NotFound } from '../components.tsx';
 import { GererImage, PhotoExercice } from '../images.tsx';
 import { indexConsignes, nomExercice } from '../lookup.ts';
 import { goBack } from '../router.ts';
+import { serverUrl } from '../server.ts';
 import { enqueue, useStore } from '../store.ts';
 import { ChargerMethode } from './Accueil.tsx';
 
@@ -49,7 +50,7 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
         <h2>Exporter le Carnet</h2>
         <p className="muted small">Un fichier CSV, une ligne par série, lisible dans Excel ou Google Sheets.</p>
         {reachable ? (
-          <a className="button button-block" href="/api/export.csv" download>
+          <a className="button button-block" href={serverUrl('/api/export.csv')} download>
             Télécharger le CSV
           </a>
         ) : (

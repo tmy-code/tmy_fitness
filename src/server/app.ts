@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { cors } from 'hono/cors';
 import type { ZodType } from 'zod';
 import {
   ajustement,
@@ -14,6 +15,7 @@ import {
   type Carnet,
   type Entrainement,
 } from '../shared/carnet.ts';
+import { API_VERSION, API_VERSION_HEADER } from '../shared/api-version.ts';
 import { methode, type ImageExercice, type Methode } from '../shared/methode.ts';
 import { exportCsv } from './csv.ts';
 
@@ -91,6 +93,9 @@ export function readImages(db: DatabaseSync): ImageExercice[] {
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
+/** Where the Android app's bundled screens run (Capacitor's default origin); the browser version is same-origin. */
+export const ANDROID_APP_ORIGIN = 'https://localhost';
+
 export function createApp(db: DatabaseSync): Hono {
   const app = new Hono();
 
@@ -98,6 +103,15 @@ export function createApp(db: DatabaseSync): Hono {
     if (error instanceof HttpError) return c.json({ error: error.message }, error.status);
     console.error(error);
     return c.json({ error: 'Internal error' }, 500);
+  });
+
+  // The Android app's screens are not served from here, so the browser inside it needs permission to call the API.
+  app.use('/api/*', cors({ origin: ANDROID_APP_ORIGIN, exposeHeaders: [API_VERSION_HEADER], maxAge: 86400 }));
+
+  // Every answer says which API version it speaks, so an app from another version stops before sending its queue.
+  app.use('/api/*', async (c, next) => {
+    await next();
+    c.res.headers.set(API_VERSION_HEADER, String(API_VERSION));
   });
 
   app.get('/api/health', (c) => {
