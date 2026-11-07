@@ -55,7 +55,7 @@ export function AdresseServeur({ onDone }: { onDone?: () => void }) {
 /** First launch of the Android app: nothing works until the server is known. */
 export function PremierLancement() {
   return (
-    <Layout title="TMY Fitness">
+    <Layout title="_fitness">
       <section className="card">
         <h2>Bienvenue</h2>
         <p className="muted">Indiquez une fois l’adresse de votre serveur. Ensuite, l’application fonctionne aussi hors ligne.</p>

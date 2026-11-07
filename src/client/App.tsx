@@ -21,7 +21,7 @@ export function App() {
   if (needsServerAddress(store)) return <PremierLancement />;
   if (!view) {
     return (
-      <Layout title="TMY Fitness">
+      <Layout title="_fitness">
         <div className="empty">
           {syncing ? (
             <p>Chargement…</p>

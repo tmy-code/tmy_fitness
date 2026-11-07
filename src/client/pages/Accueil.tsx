@@ -13,7 +13,7 @@ export function AccueilPage({ methode, carnet }: { methode: Methode | null; carn
   const niveau = niveauActuel(methode, carnet);
   const etape = etapeActuelle(carnet.parcours);
   return (
-    <Layout title="TMY Fitness">
+    <Layout title="_fitness">
       {brouillon ? (
         <a className="card card-accent" href="#/entrainement">
           <h2>Entraînement en cours</h2>
@@ -95,7 +95,7 @@ function Prochain({ methode, carnet, enCours }: { methode: Methode; carnet: Carn
 function SansMethode() {
   const { reachable, syncing } = useStore();
   return (
-    <Layout title="TMY Fitness">
+    <Layout title="_fitness">
       <section className="card">
         <h2>Aucune Méthode chargée</h2>
         <p className="muted">
