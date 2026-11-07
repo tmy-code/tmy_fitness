@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dureesParcours, exercicesPratiques, marqueursReprise, progresExercice } from './progres.ts';
-import { carnetDemo, entrainementDemo, fait } from './testing.ts';
+import { carnetDemo, entrainementDemo, fait } from './test-helpers.ts';
 
 const entrainements = [
   entrainementDemo('2026-11-02', [fait('demo-1-p1-a1', 'A1', [[3, 3], [3, 4], [3, 2]]), fait('demo-1-p1-c', 'C1', [[6, 6]])]),

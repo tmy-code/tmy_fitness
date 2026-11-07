@@ -5,9 +5,9 @@ services:
     image: ghcr.io/tmy-code/tmy_fitness:latest
     # Without this, "Build" in Container Manager reuses the image already on the NAS.
     pull_policy: always
-    container_name: tmy-fitness
+    container_name: tmy_fitness
     restart: unless-stopped
     ports:
       - "3011:3000"
     volumes:
-      - /volume1/docker/tmy-fitness:/data
+      - /volume1/docker/tmy_fitness:/data

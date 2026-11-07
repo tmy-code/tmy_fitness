@@ -6,7 +6,7 @@ import { Layout, NeedsConnection } from '../components.tsx';
 import { formatDate, pluriel, todayIso } from '../format.ts';
 import { online, useStore } from '../store.ts';
 
-export function Accueil({ methode, carnet }: { methode: Methode | null; carnet: Carnet }) {
+export function AccueilPage({ methode, carnet }: { methode: Methode | null; carnet: Carnet }) {
   const { brouillon } = useStore();
   if (!methode) return <SansMethode />;
 

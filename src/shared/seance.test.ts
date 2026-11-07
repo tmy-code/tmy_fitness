@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { nouvelEntrainement, reposApres, serieCourante, suggestionsFin } from './seance.ts';
-import { carnetDemo, demoMethode, entrainementDemo, fait, niveauDemo } from './testing.ts';
+import { carnetDemo, demoMethode, entrainementDemo, fait, niveauDemo } from './test-helpers.ts';
 
 const m = demoMethode();
 const n1 = niveauDemo(m, 'demo-1');

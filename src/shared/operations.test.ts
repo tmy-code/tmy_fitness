@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyOperations, enqueueOp, opRequest, type Operation } from './operations.ts';
-import { carnetDemo, entrainementDemo } from './testing.ts';
+import { carnetDemo, entrainementDemo } from './test-helpers.ts';
 
 describe('operations', () => {
   it('keeps only the latest queued change to the same record', () => {
