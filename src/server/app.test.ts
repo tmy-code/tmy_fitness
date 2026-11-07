@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createApp } from './app.ts';
+import { API_VERSION } from '../shared/api-version.ts';
+import { ANDROID_APP_ORIGIN, createApp } from './app.ts';
 import { openDatabase } from './db.ts';
 
 let db: DatabaseSync;
@@ -26,6 +27,33 @@ async function call(method: string, path: string, body?: unknown) {
 describe('health', () => {
   it('answers when the database is reachable', async () => {
     expect(await call('GET', '/api/health')).toEqual({ status: 200, body: { ok: true } });
+  });
+});
+
+describe('Android app access', () => {
+  it('tells every answer which API version it speaks, errors included', async () => {
+    const ok = await app.request('/api/health');
+    expect(ok.headers.get('x-api-version')).toBe(String(API_VERSION));
+    const refused = await app.request('/api/entrainements/x', { method: 'PUT', body: 'not json' });
+    expect(refused.status).toBe(400);
+    expect(refused.headers.get('x-api-version')).toBe(String(API_VERSION));
+  });
+
+  it('lets the Android app call the API and read the version', async () => {
+    const preflight = await app.request('/api/entrainements/x', {
+      method: 'OPTIONS',
+      headers: { origin: ANDROID_APP_ORIGIN, 'access-control-request-method': 'PUT', 'access-control-request-headers': 'content-type' },
+    });
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('access-control-allow-origin')).toBe(ANDROID_APP_ORIGIN);
+    const res = await app.request('/api/snapshot', { headers: { origin: ANDROID_APP_ORIGIN } });
+    expect(res.headers.get('access-control-allow-origin')).toBe(ANDROID_APP_ORIGIN);
+    expect(res.headers.get('access-control-expose-headers')).toContain('x-api-version');
+  });
+
+  it('does not open the API to other websites', async () => {
+    const res = await app.request('/api/snapshot', { headers: { origin: 'https://example.com' } });
+    expect(res.headers.get('access-control-allow-origin')).not.toBe('https://example.com');
   });
 });
 

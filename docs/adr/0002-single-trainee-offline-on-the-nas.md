@@ -17,3 +17,4 @@ Everything happens on the phone mid-workout, often without a connection, and the
 - Entraînements recorded on the phone but not yet sent are lost if the phone is wiped before it reconnects.
 - No reminders or push notifications: the recommended Fréquence is shown as information only.
 - Sharing the app with another trainee would require revisiting the data model, not just adding a login screen.
+- On the phone, the installable web app is replaced by a sideloaded Android app (ADR 0003); the queue and the NAS described here are unchanged.
