@@ -29,7 +29,7 @@ export class HttpError extends Error {
   }
 }
 
-export async function parse<T>(c: Context, schema: ZodType<T, any, any>): Promise<T> {
+export async function parse<T>(c: Context, schema: ZodType<T>): Promise<T> {
   const body = await c.req.json().catch(() => {
     throw new HttpError(400, 'Body must be JSON');
   });
