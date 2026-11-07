@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { enSecondes, methode } from './methode.ts';
 import { conditionAtteinte, suggestionProgramme, suggestionProgression } from './progression.ts';
 import { conclusionTests, deroulerTest, exercicesDeDepart } from './tests.ts';
-import { consigneDemo, demoMethode, fait, niveauDemo } from './testing.ts';
+import { consigneDemo, demoMethode, fait, niveauDemo } from './test-helpers.ts';
 
 const m = demoMethode();
 

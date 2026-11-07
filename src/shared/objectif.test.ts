@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { departBoucle } from './boucle.ts';
 import { objectifsDuJour } from './objectif.ts';
-import { consigneDemo, demoMethode, entrainementDemo, fait } from './testing.ts';
+import { consigneDemo, demoMethode, entrainementDemo, fait } from './test-helpers.ts';
 
 const m = demoMethode();
 const a1 = consigneDemo(m, 'demo-1-p1-a1'); // 3 Séries of 3 répétitions

@@ -1,5 +1,5 @@
 import { Layout, NotFound } from './components.tsx';
-import { Accueil } from './pages/Accueil.tsx';
+import { AccueilPage } from './pages/Accueil.tsx';
 import { CarnetDetail, CarnetPage } from './pages/Carnet.tsx';
 import { ConsignePage } from './pages/Consigne.tsx';
 import { EntrainementPage } from './pages/Entrainement.tsx';
@@ -39,7 +39,7 @@ export function App() {
   const { methode, carnet } = view;
   const [section, id] = route;
 
-  if (section === undefined || !methode) return <Accueil methode={methode} carnet={carnet} />;
+  if (section === undefined || !methode) return <AccueilPage methode={methode} carnet={carnet} />;
   if (section === 'entrainement') return <EntrainementPage methode={methode} carnet={carnet} />;
   if (section === 'tests') return id ? <TestRun methode={methode} carnet={carnet} testId={id} /> : <TestsPage methode={methode} carnet={carnet} />;
   if (section === 'niveaux') return <NiveauxPage methode={methode} carnet={carnet} />;
