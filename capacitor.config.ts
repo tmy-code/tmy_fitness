@@ -4,7 +4,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // first launch, never written here.
 const config: CapacitorConfig = {
   appId: 'com.tmycode.tmy_fitness',
-  appName: 'TMY Fitness',
+  appName: '_fitness',
   webDir: 'dist/android',
   android: {
     // Only for testing in the emulator against the dev server over plain HTTP. Release builds never set it.
