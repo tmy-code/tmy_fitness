@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dumbbell from src/client/public/icon.svg, scaled into the adaptive icon's safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group android:pivotX="256" android:pivotY="256" android:scaleX="0.62" android:scaleY="0.62">
+        <path android:fillColor="#F9FAFB" android:pathData="M120,232h272a24,24 0 0 1 24,24v0a24,24 0 0 1 -24,24h-272a24,24 0 0 1 -24,-24v-0a24,24 0 0 1 24,-24z"/>
+        <path android:fillColor="#10B981" android:pathData="M136,176h16a16,16 0 0 1 16,16v128a16,16 0 0 1 -16,16h-16a16,16 0 0 1 -16,-16v-128a16,16 0 0 1 16,-16zM360,176h16a16,16 0 0 1 16,16v128a16,16 0 0 1 -16,16h-16a16,16 0 0 1 -16,-16v-128a16,16 0 0 1 16,-16zM86,208h12a14,14 0 0 1 14,14v68a14,14 0 0 1 -14,14h-12a14,14 0 0 1 -14,-14v-68a14,14 0 0 1 14,-14zM414,208h12a14,14 0 0 1 14,14v68a14,14 0 0 1 -14,14h-12a14,14 0 0 1 -14,-14v-68a14,14 0 0 1 14,-14z"/>
+    </group>
+</vector>
