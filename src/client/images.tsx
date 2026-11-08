@@ -47,6 +47,47 @@ function Photo({ image, petite }: { image: ImageExercice; petite: boolean }) {
   );
 }
 
+/** Write or change an Exercice's description. Desktop only, like the pictures; saved on the server. */
+export function EditerDescription({ methode, exercice }: { methode: Methode; exercice: string }) {
+  const { reachable } = useStore();
+  const enregistree = descriptionExercice(methode, exercice) ?? '';
+  const [texte, setTexte] = useState(enregistree);
+  const [busy, setBusy] = useState(false);
+  const [resultat, setResultat] = useState<'ok' | 'erreur' | null>(null);
+  if (isAndroidApp) return null;
+
+  async function enregistrer() {
+    setBusy(true);
+    setResultat(null);
+    try {
+      await online('PUT', `/api/exercices/${encodeURIComponent(exercice)}/description`, { description: texte });
+      setResultat('ok');
+    } catch {
+      // The typed text stays in the box so nothing is lost.
+      setResultat('erreur');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="form">
+      <label className="field-label" htmlFor={`description-${exercice}`}>
+        Description
+      </label>
+      <textarea id={`description-${exercice}`} rows={5} maxLength={2000} value={texte} onChange={(e) => setTexte(e.target.value)} />
+      <div className="row-actions">
+        <button type="button" className="button" disabled={busy || !reachable || texte.trim() === enregistree} onClick={() => void enregistrer()}>
+          {busy ? 'Envoi…' : 'Enregistrer'}
+        </button>
+      </div>
+      {!reachable ? <p className="muted small">Connectez-vous au serveur pour enregistrer.</p> : null}
+      {resultat === 'ok' ? <p className="banner banner-ok">Description enregistrée ✓</p> : null}
+      {resultat === 'erreur' ? <p className="banner banner-error">Description non enregistrée. Vérifiez la connexion au serveur (Wi-Fi ou Tailscale), puis réessayez.</p> : null}
+    </div>
+  );
+}
+
 // Phone photos are several megabytes; this size keeps text in a photographed page readable.
 const COTE_MAX = 1600;
 

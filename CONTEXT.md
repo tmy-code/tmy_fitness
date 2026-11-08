@@ -35,7 +35,7 @@ One of the successive prescribed workouts of an early Niveau (Premier programme,
 _Avoid_: Programme for the method as a whole
 
 **Exercice**:
-A specific movement identified by its code — a letter, optionally followed by a number (A1, B3, E6, or B alone); progress is tracked per Exercice. It has a short name, the book page, and an optional description the owner writes in their own words (kept only in the private Méthode).
+A specific movement identified by its code — a letter, optionally followed by a number (A1, B3, E6, or B alone); progress is tracked per Exercice. It has a short name, the book page, and an optional description the owner writes in their own words (kept only in the private Méthode and the NAS; it can be edited in the desktop app and exported with the Méthode file).
 _Avoid_: Variante, exercise, mouvement
 
 **Famille**:
