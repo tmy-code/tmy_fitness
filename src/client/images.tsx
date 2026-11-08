@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NeedsConnection } from './components.tsx';
 import type { ImageExercice, Methode } from '../shared/methode.ts';
 import { useImageSrc } from './image-cache.ts';
-import { descriptionExercice } from './lookup.ts';
+import { codeDepuisNom, descriptionExercice } from './lookup.ts';
 import { isAndroidApp } from './native.ts';
 import { online, useStore } from './store.ts';
 
@@ -44,6 +44,67 @@ function Photo({ image, petite }: { image: ImageExercice; petite: boolean }) {
         </button>
       ) : null}
     </>
+  );
+}
+
+/** Pictures for several Exercices at once: each file is named after its Exercice code (A16.jpg, B3_B.jpg). Desktop only. */
+export function ImporterImages({ methode }: { methode: Methode }) {
+  const { reachable } = useStore();
+  const [busy, setBusy] = useState(false);
+  const [rapport, setRapport] = useState<{ ok: boolean; texte: string }[] | null>(null);
+  if (isAndroidApp) return null;
+
+  async function importer(files: File[]) {
+    setBusy(true);
+    setRapport(null);
+    const codes = methode.exercices.map((e) => e.code);
+    const lignes: { ok: boolean; texte: string }[] = [];
+    for (const file of files) {
+      const code = codeDepuisNom(file.name, codes);
+      if (!code) {
+        lignes.push({ ok: false, texte: `⚠ ${file.name} : aucun exercice de ce nom` });
+        continue;
+      }
+      try {
+        await online('PUT', `/api/images/${encodeURIComponent(code)}`, await reduire(file));
+        lignes.push({ ok: true, texte: `${code} ✓` });
+      } catch {
+        lignes.push({ ok: false, texte: `⚠ ${code} : échec, réessayez` });
+      }
+    }
+    setRapport(lignes);
+    setBusy(false);
+  }
+
+  return (
+    <div className="form">
+      <label className={`button button-block ${busy || !reachable ? 'disabled' : ''}`}>
+        {busy ? 'Envoi…' : 'Importer plusieurs images'}
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          disabled={busy || !reachable}
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            e.target.value = '';
+            if (files.length) void importer(files);
+          }}
+        />
+      </label>
+      <p className="muted small">Le nom de chaque fichier est le code de l’exercice : A16.jpg, E6.png, B3_B.jpg pour B3/B.</p>
+      {!reachable ? <p className="muted small">Connectez-vous au serveur pour envoyer des images.</p> : null}
+      {rapport ? (
+        <ul className="small">
+          {rapport.map((l) => (
+            <li key={l.texte}>
+              {l.texte}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 

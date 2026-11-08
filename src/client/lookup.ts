@@ -21,6 +21,12 @@ export function nomExercice(methode: Methode, code: string): string {
   return e ? `${code} · ${e.nom}` : code;
 }
 
+/** The Exercice a picture file is for: its name without the extension, with "_" standing for "/" (B3_B.jpg is B3/B). */
+export function codeDepuisNom(nomFichier: string, codes: string[]): string | undefined {
+  const base = nomFichier.replace(/\.[^.]*$/, '').trim().toUpperCase();
+  return codes.find((c) => c.toUpperCase() === base || c.toUpperCase() === base.replace(/_/g, '/'));
+}
+
 export function descriptionExercice(methode: Methode, code: string): string | undefined {
   return methode.exercices.find((x) => x.code === code)?.description;
 }

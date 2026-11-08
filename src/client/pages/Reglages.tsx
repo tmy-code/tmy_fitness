@@ -3,7 +3,7 @@ import type { Ajustement, Carnet } from '../../shared/carnet.ts';
 import type { Cible, Frequence, Methode, SerieConsigne } from '../../shared/methode.ts';
 import { libelleFrequence, niveauActuel } from '../../shared/prochain.ts';
 import { Layout, NotFound } from '../components.tsx';
-import { EditerDescription, GererImage, PhotoExercice } from '../images.tsx';
+import { EditerDescription, GererImage, ImporterImages, PhotoExercice } from '../images.tsx';
 import { indexConsignes, nomExercice } from '../lookup.ts';
 import { goBack } from '../router.ts';
 import { isAndroidApp, ouvrirFichier } from '../native.ts';
@@ -103,6 +103,7 @@ function ImagesExercices({ methode }: { methode: Methode }) {
       <p className="muted small">
         {avecImage.size} sur {methode.exercices.length} exercices ont une image. Touchez un exercice pour ajouter une image ou écrire sa description.
       </p>
+      <ImporterImages methode={methode} />
       <ul className="liste-images">
         {methode.exercices.map((e) => (
           <li key={e.code}>
