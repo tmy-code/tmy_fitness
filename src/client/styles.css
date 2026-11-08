@@ -643,6 +643,23 @@ input.num {
   max-height: 160px;
 }
 
+.description-exercice {
+  margin: 12px 0 0;
+}
+
+.description-exercice summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.description-exercice p {
+  margin: 0 0 8px;
+  white-space: pre-line;
+}
+
 .photo-plein-ecran {
   position: fixed;
   inset: 0;

@@ -2,7 +2,7 @@
   "nom": "Méthode de démonstration (contenu inventé)",
   "exercices": [
     { "code": "A", "nom": "Pompes démo" },
-    { "code": "A1", "nom": "Pompes démo, mains surélevées" },
+    { "code": "A1", "nom": "Pompes démo, mains surélevées", "description": "Description inventée : mains sur un support, corps droit, descendre la poitrine vers le support." },
     { "code": "A2", "nom": "Pompes démo, sur les genoux" },
     { "code": "C1", "nom": "Tirage démo, facile" },
     { "code": "C2", "nom": "Tirage démo, moyen" },

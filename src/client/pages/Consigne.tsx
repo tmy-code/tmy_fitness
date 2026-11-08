@@ -6,7 +6,7 @@ import { derniereReprise, objectifsDuJour } from '../../shared/objectif.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { newId } from '../api.ts';
 import { Layout, NotFound } from '../components.tsx';
-import { GererImage, PhotoExercice } from '../images.tsx';
+import { DescriptionExercice, GererImage, PhotoExercice } from '../images.tsx';
 import { formatCible, formatDate, formatDuree, formatValeur, todayIso } from '../format.ts';
 import { indexConsignes, nomExercice } from '../lookup.ts';
 import { isAndroidApp } from '../native.ts';
@@ -64,6 +64,8 @@ export function ConsignePage({ methode, carnet, consigneId }: { methode: Methode
           ))}
         </section>
       ) : null}
+
+      <DescriptionExercice methode={methode} exercice={exercice} />
 
       {isAndroidApp ? null : (
         <section className="card">

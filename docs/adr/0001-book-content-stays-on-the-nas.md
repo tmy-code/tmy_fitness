@@ -4,7 +4,7 @@ status: accepted
 
 # Book content stays on the NAS, never in the repo or image
 
-The app needs the book's Niveaux, Séances, Programmes, Consignes and Routines de souplesse to show today's Entraînement, but *Access Autonomy* is marked "reproduction et diffusion interdites" and this repository (and the container image built from it) is public. So the transcribed content lives only in a private data file in the app's data folder on the NAS, loaded at runtime and cached on the phone; it is never committed, never baked into the image, and never used as test fixtures. Exercices are shown by a short name written in our own words plus the book's page reference — the book's descriptions and photos are not copied at all.
+The app needs the book's Niveaux, Séances, Programmes, Consignes and Routines de souplesse to show today's Entraînement, but *Access Autonomy* is marked "reproduction et diffusion interdites" and this repository (and the container image built from it) is public. So the transcribed content lives only in a private data file in the app's data folder on the NAS, loaded at runtime and cached on the phone; it is never committed, never baked into the image, and never used as test fixtures. Exercices are shown by a short name written in our own words plus the book's page reference — the book's descriptions and photos are not copied into the repository. An Exercice may carry a `description` the owner writes in their own words; like the rest of the Méthode it lives only in the private file and the NAS, and the demo Méthode uses a made-up one.
 
 ## Considered Options
 

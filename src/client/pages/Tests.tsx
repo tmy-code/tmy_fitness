@@ -7,7 +7,7 @@ import { newId } from '../api.ts';
 import { Layout, NotFound, Stepper } from '../components.tsx';
 import { preparerSon, signalFinRepos } from '../device.ts';
 import { formatChrono, formatCible, formatDate, formatDuree, todayIso } from '../format.ts';
-import { PhotoExercice } from '../images.tsx';
+import { DescriptionExercice, PhotoExercice } from '../images.tsx';
 import { nomExercice, pageExercice } from '../lookup.ts';
 import { navigate } from '../router.ts';
 import { Chrono } from './Entrainement.tsx';
@@ -153,6 +153,7 @@ function EtapeEnCours({ methode, etape, numero, onValider }: { methode: Methode;
         {page ? ` · Descriptif p. ${page}` : ''}
       </p>
       <PhotoExercice exercice={etape.exercice} />
+      <DescriptionExercice methode={methode} exercice={etape.exercice} />
       {etape.note ? <p className="consigne-note">{etape.note}</p> : null}
       {timed ? <Chrono secondes={etape.cible.type === 'duree' ? etape.cible.secondes : undefined} onFin={setValue} /> : null}
       <p className="field-label">{timed ? 'Tenu' : 'Répétitions faites'}</p>
