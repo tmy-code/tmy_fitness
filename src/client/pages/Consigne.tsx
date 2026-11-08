@@ -6,9 +6,9 @@ import { derniereReprise, objectifsDuJour } from '../../shared/objectif.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { newId } from '../api.ts';
 import { Layout, NotFound } from '../components.tsx';
-import { DescriptionExercice, GererImage, PhotoExercice } from '../images.tsx';
+import { DescriptionExercice, EditerDescription, GererImage, PhotoExercice } from '../images.tsx';
 import { formatCible, formatDate, formatDuree, formatValeur, todayIso } from '../format.ts';
-import { indexConsignes, nomExercice } from '../lookup.ts';
+import { descriptionExercice, indexConsignes, nomExercice } from '../lookup.ts';
 import { isAndroidApp } from '../native.ts';
 import { enqueue } from '../store.ts';
 
@@ -73,6 +73,7 @@ export function ConsignePage({ methode, carnet, consigneId }: { methode: Methode
           <p className="muted small">Une photo ou un schéma pour savoir quoi faire, affiché pendant l’entraînement.</p>
           <PhotoExercice exercice={exercice} />
           <GererImage exercice={exercice} />
+          <EditerDescription key={descriptionExercice(methode, exercice) ?? ''} methode={methode} exercice={exercice} />
         </section>
       )}
 

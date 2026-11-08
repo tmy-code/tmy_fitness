@@ -118,6 +118,38 @@ describe('exercise descriptions', () => {
   });
 });
 
+describe('editing an Exercice description', () => {
+  const put = (code: string, description: string) => call('PUT', `/api/exercices/${encodeURIComponent(code)}/description`, { description });
+  const find = async (code: string) => (await call('GET', '/api/snapshot')).body.methode.exercices.find((e: { code: string }) => e.code === code);
+
+  it('sets, changes and removes one description without touching the rest of the Méthode', async () => {
+    await call('PUT', '/api/methode', demo);
+    expect((await put('A2', '  Texte inventé  ')).status).toBe(204);
+    expect((await find('A2')).description).toBe('Texte inventé');
+    expect((await find('A1')).description).toContain('inventée');
+    expect((await call('GET', '/api/snapshot')).body.methode.niveaux).toHaveLength(3);
+    expect((await put('A2', '')).status).toBe(204);
+    expect((await find('A2')).description).toBeUndefined();
+  });
+
+  it('refuses an unknown Exercice, a missing Méthode and a text that is too long', async () => {
+    expect((await put('A2', 'x')).status).toBe(404);
+    await call('PUT', '/api/methode', demo);
+    expect((await put('ZZZ', 'x')).status).toBe(404);
+    expect((await put('A2', 'x'.repeat(2001))).status).toBe(422);
+  });
+
+  it('exports the Méthode as a file, edited descriptions included', async () => {
+    expect((await app.request('/api/methode.json')).status).toBe(404);
+    await call('PUT', '/api/methode', demo);
+    await put('A2', 'Texte inventé');
+    const res = await app.request('/api/methode.json');
+    expect(res.headers.get('content-disposition')).toContain('attachment');
+    const exported = await res.json();
+    expect(exported.exercices.find((e: { code: string }) => e.code === 'A2').description).toBe('Texte inventé');
+  });
+});
+
 describe('carnet', () => {
   it('saves a replayed Entraînement once', async () => {
     await call('PUT', '/api/entrainements/test-seance-0001', seance('test-seance-0001', { termine: false }));

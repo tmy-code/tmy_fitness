@@ -3,7 +3,7 @@ import type { Ajustement, Carnet } from '../../shared/carnet.ts';
 import type { Cible, Frequence, Methode, SerieConsigne } from '../../shared/methode.ts';
 import { libelleFrequence, niveauActuel } from '../../shared/prochain.ts';
 import { Layout, NotFound } from '../components.tsx';
-import { GererImage, PhotoExercice } from '../images.tsx';
+import { EditerDescription, GererImage, PhotoExercice } from '../images.tsx';
 import { indexConsignes, nomExercice } from '../lookup.ts';
 import { goBack } from '../router.ts';
 import { isAndroidApp, ouvrirFichier } from '../native.ts';
@@ -77,7 +77,15 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
         <h2>Méthode</h2>
         <p className="muted small">
           {methode.nom} · {methode.niveaux.length} niveaux · {methode.exercices.length} exercices
+          {isAndroidApp ? '' : '. Le fichier téléchargé contient vos descriptions.'}
         </p>
+        {isAndroidApp ? null : reachable ? (
+          <a className="button button-block" href={serverUrl('/api/methode.json')} download>
+            Télécharger la Méthode (.json)
+          </a>
+        ) : (
+          <p className="banner banner-warn">Téléchargement : nécessite une connexion au serveur.</p>
+        )}
         <ChargerMethode />
       </section>
     </Layout>
@@ -93,7 +101,7 @@ function ImagesExercices({ methode }: { methode: Methode }) {
     <section className="card">
       <h2>Images des exercices</h2>
       <p className="muted small">
-        {avecImage.size} sur {methode.exercices.length} exercices ont une image. Touchez un exercice pour en ajouter une.
+        {avecImage.size} sur {methode.exercices.length} exercices ont une image. Touchez un exercice pour ajouter une image ou écrire sa description.
       </p>
       <ul className="liste-images">
         {methode.exercices.map((e) => (
@@ -106,6 +114,7 @@ function ImagesExercices({ methode }: { methode: Methode }) {
               <div className="liste-images-detail">
                 <PhotoExercice exercice={e.code} petite />
                 <GererImage exercice={e.code} />
+                <EditerDescription key={e.description ?? ''} methode={methode} exercice={e.code} />
               </div>
             ) : null}
           </li>

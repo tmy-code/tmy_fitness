@@ -2,7 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
-import type { ZodType } from 'zod';
+import { z, type ZodType } from 'zod';
 import {
   ajustement,
   entrainement,
@@ -127,6 +127,27 @@ export function createApp(db: DatabaseSync): Hono {
     db.prepare(
       'INSERT INTO methode (id, json, updated_at) VALUES (1, ?, ?) ON CONFLICT (id) DO UPDATE SET json = excluded.json, updated_at = excluded.updated_at',
     ).run(JSON.stringify(data), now());
+    return c.body(null, 204);
+  });
+
+  // The whole Méthode as a file, descriptions included, so a copy kept on the PC can follow what is edited in the app.
+  app.get('/api/methode.json', (c) => {
+    const data = readMethode(db);
+    if (!data) throw new HttpError(404, 'Pas de Méthode chargée');
+    c.header('content-type', 'application/json; charset=utf-8');
+    c.header('content-disposition', `attachment; filename="methode-${now().slice(0, 10)}.json"`);
+    return c.body(JSON.stringify(data, null, 2));
+  });
+
+  // The owner's own description of one Exercice; an empty text removes it. The rest of the Méthode is left as it is.
+  app.put('/api/exercices/:id/description', async (c) => {
+    const { description } = await parse(c, z.object({ description: z.string().trim().max(2000) }));
+    const data = readMethode(db);
+    const exercice = data?.exercices.find((e) => e.code === c.req.param('id'));
+    if (!data || !exercice) throw new HttpError(404, 'Exercice inconnu');
+    if (description) exercice.description = description;
+    else delete exercice.description;
+    db.prepare('UPDATE methode SET json = ?, updated_at = ? WHERE id = 1').run(JSON.stringify(data), now());
     return c.body(null, 204);
   });
 
