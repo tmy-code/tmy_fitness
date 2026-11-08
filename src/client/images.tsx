@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NeedsConnection } from './components.tsx';
 import type { ImageExercice } from '../shared/methode.ts';
 import { useImageSrc } from './image-cache.ts';
+import { isAndroidApp } from './native.ts';
 import { online, useStore } from './store.ts';
 
 /** The picture uploaded for an Exercice, if any. */
@@ -52,8 +53,13 @@ async function reduire(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Image illisible'))), 'image/jpeg', 0.85));
 }
 
-/** Add, replace or remove an Exercice's picture. Needs a connection: pictures are kept on the server. */
+/** Add, replace or remove an Exercice's picture. Desktop only: the Android app just shows the pictures. */
 export function GererImage({ exercice }: { exercice: string }) {
+  if (isAndroidApp) return null;
+  return <GererImageBureau exercice={exercice} />;
+}
+
+function GererImageBureau({ exercice }: { exercice: string }) {
   const image = useImage(exercice);
   const { reachable } = useStore();
   const [busy, setBusy] = useState(false);

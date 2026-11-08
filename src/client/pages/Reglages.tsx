@@ -71,7 +71,7 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
         </section>
       ) : null}
 
-      <ImagesExercices methode={methode} />
+      {isAndroidApp ? null : <ImagesExercices methode={methode} />}
 
       <section className="card">
         <h2>Méthode</h2>
