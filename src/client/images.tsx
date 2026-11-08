@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NeedsConnection } from './components.tsx';
-import type { ImageExercice } from '../shared/methode.ts';
+import type { ImageExercice, Methode } from '../shared/methode.ts';
 import { useImageSrc } from './image-cache.ts';
+import { descriptionExercice } from './lookup.ts';
 import { isAndroidApp } from './native.ts';
 import { online, useStore } from './store.ts';
 
@@ -14,6 +15,18 @@ export function useImage(exercice: string) {
 export function PhotoExercice({ exercice, petite = false }: { exercice: string; petite?: boolean }) {
   const image = useImage(exercice);
   return image ? <Photo key={image.version} image={image} petite={petite} /> : null;
+}
+
+/** The Exercice's description, folded away until asked for; nothing when the Méthode has none. */
+export function DescriptionExercice({ methode, exercice }: { methode: Methode; exercice: string }) {
+  const texte = descriptionExercice(methode, exercice);
+  if (!texte) return null;
+  return (
+    <details className="description-exercice">
+      <summary>Description</summary>
+      <p>{texte}</p>
+    </details>
+  );
 }
 
 function Photo({ image, petite }: { image: ImageExercice; petite: boolean }) {

@@ -109,6 +109,15 @@ describe('methode', () => {
   });
 });
 
+describe('exercise descriptions', () => {
+  it('keeps an Exercice description sent with the Méthode', async () => {
+    expect((await call('PUT', '/api/methode', demo)).status).toBe(204);
+    const { methode } = (await call('GET', '/api/snapshot')).body;
+    expect(methode.exercices.find((e: { code: string }) => e.code === 'A1').description).toContain('inventée');
+    expect(methode.exercices.find((e: { code: string }) => e.code === 'A').description).toBeUndefined();
+  });
+});
+
 describe('carnet', () => {
   it('saves a replayed Entraînement once', async () => {
     await call('PUT', '/api/entrainements/test-seance-0001', seance('test-seance-0001', { termine: false }));

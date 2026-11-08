@@ -113,6 +113,8 @@ export const exercice = z.object({
   /** A short name in our own words — never the book's description. */
   nom: z.string().trim().min(1).max(100),
   page: z.number().int().min(1).optional(),
+  /** How to do it, in the owner's own words. Only ever in the private Méthode file, never in the repo. */
+  description: text.optional(),
 });
 export type Exercice = z.infer<typeof exercice>;
 

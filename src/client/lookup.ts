@@ -21,6 +21,10 @@ export function nomExercice(methode: Methode, code: string): string {
   return e ? `${code} · ${e.nom}` : code;
 }
 
+export function descriptionExercice(methode: Methode, code: string): string | undefined {
+  return methode.exercices.find((x) => x.code === code)?.description;
+}
+
 export function pageExercice(methode: Methode, code: string): number | undefined {
   return methode.exercices.find((x) => x.code === code)?.page;
 }
