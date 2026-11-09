@@ -107,16 +107,8 @@ function SansMethode() {
   );
 }
 
-/** Descriptions written in the app that the file about to be loaded would replace or remove. */
-export function descriptionsPerdues(actuelle: Methode | null, chargee: Methode): number {
-  if (!actuelle) return 0;
-  const nouvelles = new Map(chargee.exercices.map((e) => [e.code, e.description ?? '']));
-  return actuelle.exercices.filter((e) => e.description && nouvelles.get(e.code) !== e.description).length;
-}
-
 /** Uploads the private Méthode file (never part of the app itself, see ADR 0001). */
 export function ChargerMethode() {
-  const { view } = useStore();
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   async function onFile(file: File | undefined) {
@@ -128,11 +120,6 @@ export function ChargerMethode() {
       if (!parsed.success) {
         const issue = parsed.error.issues[0]!;
         setMessage(`Fichier invalide : ${issue.path.join('.')} ${issue.message}`);
-        return;
-      }
-      const perdues = descriptionsPerdues(view?.methode ?? null, parsed.data);
-      if (perdues > 0 && !window.confirm(`${perdues} ${perdues > 1 ? 'descriptions modifiées' : 'description modifiée'} dans l’application ${perdues > 1 ? 'seront remplacées' : 'sera remplacée'} par celle${perdues > 1 ? 's' : ''} du fichier. Charger quand même ?`)) {
-        setMessage('Chargement annulé');
         return;
       }
       await online('PUT', '/api/methode', parsed.data);
@@ -150,6 +137,7 @@ export function ChargerMethode() {
         {busy ? 'Chargement…' : 'Charger un fichier Méthode (.json)'}
         <input type="file" accept="application/json,.json" hidden disabled={busy} onChange={(e) => void onFile(e.target.files?.[0])} />
       </label>
+      <p className="muted small">Vos noms et descriptions modifiés dans l’application sont conservés.</p>
       {message ? <p className="small">{message}</p> : null}
     </div>
   );

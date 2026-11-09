@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { API_VERSION } from '../shared/api-version.ts';
-import { ANDROID_APP_ORIGIN, createApp } from './app.ts';
+import { ANDROID_APP_ORIGIN, appliquerPerso, createApp } from './app.ts';
 import { openDatabase } from './db.ts';
 
 let db: DatabaseSync;
@@ -118,35 +118,82 @@ describe('exercise descriptions', () => {
   });
 });
 
-describe('editing an Exercice description', () => {
-  const put = (code: string, description: string) => call('PUT', `/api/exercices/${encodeURIComponent(code)}/description`, { description });
+describe('personal Exercice texts', () => {
+  const put = (code: string, body: unknown) => call('PUT', `/api/exercices/${encodeURIComponent(code)}`, body);
+  const del = (code: string) => call('DELETE', `/api/exercices/${encodeURIComponent(code)}`);
   const find = async (code: string) => (await call('GET', '/api/snapshot')).body.methode.exercices.find((e: { code: string }) => e.code === code);
 
-  it('sets, changes and removes one description without touching the rest of the Méthode', async () => {
+  it('applies the trimmed name and description over the file without touching the rest', async () => {
     await call('PUT', '/api/methode', demo);
-    expect((await put('A2', '  Texte inventé  ')).status).toBe(204);
-    expect((await find('A2')).description).toBe('Texte inventé');
+    expect((await put('A2', { nom: '  Nom perso  ', description: '  Texte inventé  ' })).status).toBe(204);
+    const a2 = await find('A2');
+    expect(a2.nom).toBe('Nom perso');
+    expect(a2.description).toBe('Texte inventé');
     expect((await find('A1')).description).toContain('inventée');
     expect((await call('GET', '/api/snapshot')).body.methode.niveaux).toHaveLength(3);
-    expect((await put('A2', '')).status).toBe(204);
-    expect((await find('A2')).description).toBeUndefined();
   });
 
-  it('refuses an unknown Exercice, a missing Méthode and a text that is too long', async () => {
-    expect((await put('A2', 'x')).status).toBe(404);
+  it('keeps the other field when only one is sent', async () => {
     await call('PUT', '/api/methode', demo);
-    expect((await put('ZZZ', 'x')).status).toBe(404);
-    expect((await put('A2', 'x'.repeat(2001))).status).toBe(422);
+    await put('A1', { nom: 'Autre nom' });
+    expect(await find('A1')).toMatchObject({ nom: 'Autre nom', description: expect.stringContaining('inventée') });
+    await put('A2', { description: 'Seulement un texte' });
+    expect(await find('A2')).toMatchObject({ nom: 'Pompes démo, sur les genoux', description: 'Seulement un texte' });
+    await put('A2', { nom: 'Nom seul' });
+    expect(await find('A2')).toMatchObject({ nom: 'Nom seul', description: 'Seulement un texte' });
   });
 
-  it('exports the Méthode as a file, edited descriptions included', async () => {
+  it('hides the description of the file when the text is empty', async () => {
+    await call('PUT', '/api/methode', demo);
+    expect((await put('A1', { description: '' })).status).toBe(204);
+    expect((await find('A1')).description).toBeUndefined();
+  });
+
+  it('goes back to the file with DELETE, as many times as asked', async () => {
+    await call('PUT', '/api/methode', demo);
+    await put('A1', { nom: 'Autre nom', description: '' });
+    expect((await del('A1')).status).toBe(204);
+    expect((await del('A1')).status).toBe(204);
+    expect(await find('A1')).toMatchObject({ nom: 'Pompes démo, mains surélevées', description: expect.stringContaining('inventée') });
+  });
+
+  it('refuses an unknown Exercice, a missing Méthode and invalid bodies', async () => {
+    expect((await put('A2', { nom: 'x' })).status).toBe(404);
+    expect((await del('A2')).status).toBe(404);
+    await call('PUT', '/api/methode', demo);
+    expect((await put('ZZZ', { nom: 'x' })).status).toBe(404);
+    expect((await del('ZZZ')).status).toBe(404);
+    expect((await put('A2', { description: 'x'.repeat(2001) })).status).toBe(422);
+    expect((await put('A2', { nom: '   ' })).status).toBe(422);
+    expect((await put('A2', { nom: 'x'.repeat(101) })).status).toBe(422);
+    expect((await put('A2', {})).status).toBe(422);
+  });
+
+  it('survives reloading the Méthode file', async () => {
+    await call('PUT', '/api/methode', demo);
+    await put('A2', { nom: 'Nom perso', description: 'Texte inventé' });
+    expect((await call('PUT', '/api/methode', demo)).status).toBe(204);
+    expect(await find('A2')).toMatchObject({ nom: 'Nom perso', description: 'Texte inventé' });
+  });
+
+  it('ignores an override whose code the file lacks, and brings it back with the code', () => {
+    const sans = { ...demo, exercices: demo.exercices.filter((e: { code: string }) => e.code !== 'A2') };
+    const rows = [{ code: 'A2', nom: 'Nom perso', description: null }];
+    expect(appliquerPerso(sans, rows).exercices.some((e) => e.code === 'A2')).toBe(false);
+    expect(appliquerPerso(demo, rows).exercices.find((e) => e.code === 'A2')?.nom).toBe('Nom perso');
+  });
+
+  it('exports the Méthode file and the CSV with the personal texts', async () => {
     expect((await app.request('/api/methode.json')).status).toBe(404);
     await call('PUT', '/api/methode', demo);
-    await put('A2', 'Texte inventé');
+    await put('A2', { description: 'Texte inventé' });
+    await put('A1', { nom: 'Nom perso' });
     const res = await app.request('/api/methode.json');
     expect(res.headers.get('content-disposition')).toContain('attachment');
     const exported = await res.json();
     expect(exported.exercices.find((e: { code: string }) => e.code === 'A2').description).toBe('Texte inventé');
+    await call('PUT', '/api/entrainements/test-seance-0001', seance('test-seance-0001'));
+    expect(await (await app.request('/api/export.csv')).text()).toContain(';A1;Nom perso;');
   });
 });
 
