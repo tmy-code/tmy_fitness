@@ -45,6 +45,7 @@ Updates arrive by themselves with the nightly task. For an immediate update: *Ta
 **Run**, or in *Container Manager* → *Project* → `tmy_fitness` → *Action* → **Stop**, then **Build**.
 Your data is in `docker/tmy_fitness`, not in the image, so it is not affected.
 Before changing the database structure, the app saves a copy in `docker/tmy_fitness/backups`.
+The table of edited Exercice names and descriptions is covered by that copy and by Hyper Backup like the rest of the database.
 
 **Rolling back:** every build is also tagged with its commit, e.g. `ghcr.io/tmy-code/tmy_fitness:sha-4a936f9`.
 Put that tag instead of `latest` in the project's YAML and build again.

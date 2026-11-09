@@ -57,6 +57,11 @@ export const MIGRATIONS: string[] = [
     updated_at TEXT NOT NULL
   );
   `,
+  `
+  -- The owner's own name and description for an Exercice, kept apart from the Méthode file so reloading the file never overwrites them.
+  -- NULL means "use the file's value"; an empty description hides the file's one. Not a foreign key: the file may lose a code and get it back.
+  CREATE TABLE exercices_perso (code TEXT PRIMARY KEY, nom TEXT, description TEXT, updated_at TEXT NOT NULL);
+  `,
 ];
 
 function schemaVersion(db: DatabaseSync): number {

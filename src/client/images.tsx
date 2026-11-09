@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NeedsConnection } from './components.tsx';
 import type { ImageExercice, Methode } from '../shared/methode.ts';
 import { useImageSrc } from './image-cache.ts';
@@ -108,24 +108,36 @@ export function ImporterImages({ methode }: { methode: Methode }) {
   );
 }
 
-/** Write or change an Exercice's description. Desktop only, like the pictures; saved on the server. */
-export function EditerDescription({ methode, exercice }: { methode: Methode; exercice: string }) {
+/** Change an Exercice's name and description, or go back to the Méthode file's. Desktop only, like the pictures; saved on the server. */
+export function EditerExercice({ methode, exercice }: { methode: Methode; exercice: string }) {
   const { reachable } = useStore();
-  const enregistree = descriptionExercice(methode, exercice) ?? '';
-  const [texte, setTexte] = useState(enregistree);
+  const nomEnregistre = methode.exercices.find((x) => x.code === exercice)?.nom ?? '';
+  const descriptionEnregistree = descriptionExercice(methode, exercice) ?? '';
+  const [nom, setNom] = useState(nomEnregistre);
+  const [texte, setTexte] = useState(descriptionEnregistree);
   const [busy, setBusy] = useState(false);
-  const [resultat, setResultat] = useState<'ok' | 'erreur' | null>(null);
+  const [resultat, setResultat] = useState<'ok' | 'erreur' | 'erreur-retour' | 'retour' | null>(null);
+  const [confirmer, setConfirmer] = useState(false);
+  // After a save or a return to the file's version, the boxes follow the server; the banner stays.
+  useEffect(() => {
+    setNom(nomEnregistre);
+    setTexte(descriptionEnregistree);
+  }, [nomEnregistre, descriptionEnregistree]);
   if (isAndroidApp) return null;
 
-  async function enregistrer() {
+  const path = `/api/exercices/${encodeURIComponent(exercice)}`;
+  const inchange = nom.trim() === nomEnregistre && texte.trim() === descriptionEnregistree;
+
+  async function lancer(action: () => Promise<unknown>, fait: 'ok' | 'retour') {
     setBusy(true);
     setResultat(null);
+    setConfirmer(false);
     try {
-      await online('PUT', `/api/exercices/${encodeURIComponent(exercice)}/description`, { description: texte });
-      setResultat('ok');
+      await action();
+      setResultat(fait);
     } catch {
-      // The typed text stays in the box so nothing is lost.
-      setResultat('erreur');
+      // The typed text stays in the boxes so nothing is lost.
+      setResultat(fait === 'ok' ? 'erreur' : 'erreur-retour');
     } finally {
       setBusy(false);
     }
@@ -133,18 +145,76 @@ export function EditerDescription({ methode, exercice }: { methode: Methode; exe
 
   return (
     <div className="form">
+      <label className="field-label" htmlFor={`nom-${exercice}`}>
+        Nom
+      </label>
+      <input
+        id={`nom-${exercice}`}
+        type="text"
+        maxLength={100}
+        required
+        value={nom}
+        onChange={(e) => {
+          setNom(e.target.value);
+          setResultat(null);
+        }}
+      />
       <label className="field-label" htmlFor={`description-${exercice}`}>
         Description
       </label>
-      <textarea id={`description-${exercice}`} rows={5} maxLength={2000} value={texte} onChange={(e) => setTexte(e.target.value)} />
+      <textarea
+        id={`description-${exercice}`}
+        rows={5}
+        maxLength={2000}
+        value={texte}
+        onChange={(e) => {
+          setTexte(e.target.value);
+          setResultat(null);
+        }}
+      />
+      <p className="muted small">Si vous laissez la description vide, aucune description ne sera affichée.</p>
       <div className="row-actions">
-        <button type="button" className="button" disabled={busy || !reachable || texte.trim() === enregistree} onClick={() => void enregistrer()}>
+        <button
+          type="button"
+          className="button"
+          disabled={busy || !reachable || nom.trim() === '' || inchange}
+          onClick={() =>
+            void lancer(
+              () =>
+                online('PUT', path, {
+                  ...(nom.trim() !== nomEnregistre ? { nom } : {}),
+                  ...(texte.trim() !== descriptionEnregistree ? { description: texte } : {}),
+                }),
+              'ok',
+            )
+          }
+        >
           {busy ? 'Envoi…' : 'Enregistrer'}
         </button>
       </div>
+      {nom.trim() === '' ? <p className="muted small">Le nom ne peut pas être vide.</p> : null}
+      {confirmer ? (
+        <div className="banner banner-warn">
+          <p>Vos modifications de nom et de description seront perdues.</p>
+          <div className="row-actions">
+            <button type="button" className="button" autoFocus onClick={() => setConfirmer(false)}>
+              Annuler
+            </button>
+            <button type="button" className="button button-danger" disabled={busy} onClick={() => void lancer(() => online('DELETE', path), 'retour')}>
+              {busy ? 'Rétablissement…' : 'Revenir à la version du fichier'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="button button-danger" disabled={busy || !reachable} onClick={() => setConfirmer(true)}>
+          Revenir à la version du fichier
+        </button>
+      )}
       {!reachable ? <p className="muted small">Connectez-vous au serveur pour enregistrer.</p> : null}
-      {resultat === 'ok' ? <p className="banner banner-ok">Description enregistrée ✓</p> : null}
-      {resultat === 'erreur' ? <p className="banner banner-error">Description non enregistrée. Vérifiez la connexion au serveur (Wi-Fi ou Tailscale), puis réessayez.</p> : null}
+      {resultat === 'ok' ? <p className="banner banner-ok">Enregistré ✓</p> : null}
+      {resultat === 'retour' ? <p className="banner banner-ok">Version du fichier rétablie ✓</p> : null}
+      {resultat === 'erreur-retour' ? <p className="banner banner-error">Retour à la version du fichier impossible. Vérifiez la connexion au serveur (Wi-Fi ou Tailscale), puis réessayez.</p> : null}
+      {resultat === 'erreur' ? <p className="banner banner-error">Non enregistré. Vérifiez la connexion au serveur (Wi-Fi ou Tailscale), puis réessayez.</p> : null}
     </div>
   );
 }

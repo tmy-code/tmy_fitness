@@ -49,9 +49,30 @@ function samePath(c: Context, value: string) {
 type Row = Record<string, unknown>;
 const now = () => new Date().toISOString();
 
+type Perso = { code: string; nom: string | null; description: string | null };
+
+/** Lays the owner's own Exercice names and descriptions over the Méthode; codes the Méthode does not have are ignored. */
+export function appliquerPerso(m: Methode, rows: Perso[]): Methode {
+  const parCode = new Map(rows.map((r) => [r.code, r]));
+  return {
+    ...m,
+    exercices: m.exercices.map((e) => {
+      const perso = parCode.get(e.code);
+      if (!perso) return e;
+      const copie = { ...e };
+      if (perso.nom !== null) copie.nom = perso.nom;
+      if (perso.description === '') delete copie.description;
+      else if (perso.description !== null) copie.description = perso.description;
+      return copie;
+    }),
+  };
+}
+
 export function readMethode(db: DatabaseSync): Methode | null {
   const row = db.prepare('SELECT json FROM methode WHERE id = 1').get() as { json: string } | undefined;
-  return row ? (JSON.parse(row.json) as Methode) : null;
+  if (!row) return null;
+  const perso = db.prepare('SELECT code, nom, description FROM exercices_perso').all() as Perso[];
+  return appliquerPerso(JSON.parse(row.json) as Methode, perso);
 }
 
 export function readCarnet(db: DatabaseSync): Carnet {
@@ -119,6 +140,13 @@ export function createApp(db: DatabaseSync): Hono {
     return c.json({ ok: true });
   });
 
+  /** 404 unless a Méthode is loaded and has this Exercice code. */
+  function codeConnu(code: string) {
+    const row = db.prepare('SELECT json FROM methode WHERE id = 1').get() as { json: string } | undefined;
+    const data = row ? (JSON.parse(row.json) as Methode) : null;
+    if (!data?.exercices.some((e) => e.code === code)) throw new HttpError(404, 'Exercice inconnu');
+  }
+
   app.get('/api/snapshot', (c) => c.json({ methode: readMethode(db), carnet: readCarnet(db), images: readImages(db) }));
 
   // The Méthode is the owner's transcription of the book; it replaces the previous one as a whole.
@@ -130,7 +158,7 @@ export function createApp(db: DatabaseSync): Hono {
     return c.body(null, 204);
   });
 
-  // The whole Méthode as a file, descriptions included, so a copy kept on the PC can follow what is edited in the app.
+  // The whole Méthode as a file, with the owner's edited names and descriptions applied, so a copy kept on the PC can follow what is edited in the app.
   app.get('/api/methode.json', (c) => {
     const data = readMethode(db);
     if (!data) throw new HttpError(404, 'Pas de Méthode chargée');
@@ -139,15 +167,28 @@ export function createApp(db: DatabaseSync): Hono {
     return c.body(JSON.stringify(data, null, 2));
   });
 
-  // The owner's own description of one Exercice; an empty text removes it. The rest of the Méthode is left as it is.
-  app.put('/api/exercices/:id/description', async (c) => {
-    const { description } = await parse(c, z.object({ description: z.string().trim().max(2000) }));
-    const data = readMethode(db);
-    const exercice = data?.exercices.find((e) => e.code === c.req.param('id'));
-    if (!data || !exercice) throw new HttpError(404, 'Exercice inconnu');
-    if (description) exercice.description = description;
-    else delete exercice.description;
-    db.prepare('UPDATE methode SET json = ?, updated_at = ? WHERE id = 1').run(JSON.stringify(data), now());
+  // The owner's own name and/or description of one Exercice, kept apart from the Méthode file so reloading it never overwrites them.
+  // A field left out keeps its current value; an empty description hides the file's one.
+  app.put('/api/exercices/:id', async (c) => {
+    const { nom, description } = await parse(
+      c,
+      z
+        .object({ nom: z.string().trim().min(1).max(100).optional(), description: z.string().trim().max(2000).optional() })
+        .refine((v) => v.nom !== undefined || v.description !== undefined, { message: 'nom ou description requis' }),
+    );
+    codeConnu(c.req.param('id'));
+    db.prepare(
+      `INSERT INTO exercices_perso (code, nom, description, updated_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT (code) DO UPDATE SET nom = COALESCE(excluded.nom, nom), description = COALESCE(excluded.description, description),
+         updated_at = excluded.updated_at`,
+    ).run(c.req.param('id'), nom ?? null, description ?? null, now());
+    return c.body(null, 204);
+  });
+
+  // Back to the Méthode file's own name and description.
+  app.delete('/api/exercices/:id', (c) => {
+    codeConnu(c.req.param('id'));
+    db.prepare('DELETE FROM exercices_perso WHERE code = ?').run(c.req.param('id'));
     return c.body(null, 204);
   });
 
