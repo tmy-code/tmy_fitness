@@ -231,6 +231,7 @@ async function reduire(file: File): Promise<Blob> {
   canvas.height = Math.round(bitmap.height * echelle);
   const ctx = canvas.getContext('2d')!;
   // A transparent PNG would turn black as a JPEG.
+  // White mat behind the picture (canvas cannot read a CSS variable).
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
