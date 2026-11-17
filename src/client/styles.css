@@ -13,7 +13,6 @@
   --tonal: #262626;
   --tonal-hover: #3f3f3f;
   --tonal-active: #333333;
-  --emphasis-hover: #e5e5e5;
   --success: #16a34a;
   --success-text: #4ade80;
   --success-border: #14532d;
@@ -211,13 +210,6 @@ section {
   background: var(--tonal-active);
   border-color: transparent;
 }
-
-.button-emphasis {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--base);
-}
-
 
 .button-danger {
   background: transparent;
@@ -767,12 +759,6 @@ a.card:active,
   .button-primary:hover {
     background: var(--tonal-hover);
     border-color: transparent;
-  }
-
-  .button-emphasis:hover {
-    background: var(--emphasis-hover);
-    border-color: var(--emphasis-hover);
-    color: var(--base);
   }
 
   .button-danger:hover {
