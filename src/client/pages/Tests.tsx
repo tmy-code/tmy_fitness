@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { Carnet, Entrainement } from '../../shared/carnet.ts';
 import { enSecondes, type Methode, type Test } from '../../shared/methode.ts';
-import type { Operation } from '../../shared/operations.ts';
-import { conclusionTests, deroulerTest, exercicesDeDepart, type DeroulementTest } from '../../shared/tests.ts';
+import { demarrerApresTests } from '../../shared/parcours.ts';
+import { conclusionTests, deroulerTest, type DeroulementTest } from '../../shared/tests.ts';
 import { newId } from '../api.ts';
 import { Layout, NotFound, Stepper } from '../components.tsx';
 import { preparerSon, signalFinRepos } from '../device.ts';
@@ -28,10 +28,7 @@ export function TestsPage({ methode, carnet }: { methode: Methode; carnet: Carne
 
   function commencer() {
     if (!niveau) return;
-    const ops: Operation[] = [{ kind: 'parcours', data: { id: newId(), niveau: niveau.id, debut: todayIso(), boucle: false } }];
-    if (partie) ops.push({ kind: 'programme-actuel', data: { niveau: niveau.id, partie: partie.id } });
-    for (const x of exercicesDeDepart(niveau, conclusion.exercices)) ops.push({ kind: 'exercice-actuel', data: x });
-    void enqueue(...ops);
+    void enqueue(...demarrerApresTests(niveau, partie, conclusion, newId(), todayIso()));
     navigate('/', { replace: true });
   }
 

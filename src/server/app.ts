@@ -3,18 +3,8 @@ import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 import { z, type ZodType } from 'zod';
-import {
-  ajustement,
-  entrainement,
-  etapeParcours,
-  exerciceActuel,
-  noteExercice,
-  programmeActuel,
-  reglages,
-  reprise,
-  type Carnet,
-  type Entrainement,
-} from '../shared/carnet.ts';
+import { reglages, type Carnet, type Entrainement } from '../shared/carnet.ts';
+import { RECORDS, type RecordData, type RecordName } from '../shared/operations.ts';
 import { API_VERSION, API_VERSION_HEADER } from '../shared/api-version.ts';
 import { methode, type ImageExercice, type Methode } from '../shared/methode.ts';
 import { exportCsv } from './csv.ts';
@@ -102,6 +92,84 @@ export function readCarnet(db: DatabaseSync): Carnet {
     ajustements: all('SELECT json FROM ajustements').map((r) => JSON.parse(r.json as string)),
     reglages: reglagesRow ? JSON.parse(reglagesRow.json) : { frequence: null },
   };
+}
+
+/** How each kind of record is written to SQLite. Which routes exist, and how bodies are checked, comes from RECORDS. */
+const WRITERS: { [K in RecordName]: { upsert(db: DatabaseSync, data: RecordData<K>): void; remove?(db: DatabaseSync, key: string): void } } = {
+  entrainement: {
+    upsert: (db, data) =>
+      void db
+        .prepare(
+          `INSERT INTO entrainements (id, date, kind, termine, json, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT (id) DO UPDATE SET date = excluded.date, kind = excluded.kind, termine = excluded.termine,
+             json = excluded.json, updated_at = excluded.updated_at`,
+        )
+        .run(data.id, data.date, data.kind, data.termine ? 1 : 0, JSON.stringify(data), now()),
+    remove: (db, key) => void db.prepare('DELETE FROM entrainements WHERE id = ?').run(key),
+  },
+  parcours: {
+    upsert: (db, data) =>
+      void db
+        .prepare(
+          `INSERT INTO parcours (id, niveau, debut, boucle, created_at) VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT (id) DO UPDATE SET niveau = excluded.niveau, debut = excluded.debut, boucle = excluded.boucle`,
+        )
+        .run(data.id, data.niveau, data.debut, data.boucle ? 1 : 0, now()),
+    remove: (db, key) => void db.prepare('DELETE FROM parcours WHERE id = ?').run(key),
+  },
+  reprise: {
+    upsert: (db, data) =>
+      void db
+        .prepare(
+          `INSERT INTO reprises (id, consigne, date, kind, depart) VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT (id) DO UPDATE SET consigne = excluded.consigne, date = excluded.date, kind = excluded.kind, depart = excluded.depart`,
+        )
+        .run(data.id, data.consigne, data.date, data.kind, JSON.stringify(data.depart)),
+  },
+  'exercice-actuel': {
+    upsert: (db, data) =>
+      void db
+        .prepare('INSERT INTO exercices_actuels (consigne, exercice) VALUES (?, ?) ON CONFLICT (consigne) DO UPDATE SET exercice = excluded.exercice')
+        .run(data.consigne, data.exercice),
+  },
+  'programme-actuel': {
+    upsert: (db, data) =>
+      void db
+        .prepare('INSERT INTO programmes_actuels (niveau, partie) VALUES (?, ?) ON CONFLICT (niveau) DO UPDATE SET partie = excluded.partie')
+        .run(data.niveau, data.partie),
+  },
+  note: {
+    upsert: (db, data) =>
+      void db.prepare('INSERT INTO notes (exercice, note) VALUES (?, ?) ON CONFLICT (exercice) DO UPDATE SET note = excluded.note').run(data.exercice, data.note),
+  },
+  ajustement: {
+    upsert: (db, data) =>
+      void db
+        .prepare('INSERT INTO ajustements (consigne, json) VALUES (?, ?) ON CONFLICT (consigne) DO UPDATE SET json = excluded.json')
+        .run(data.consigne, JSON.stringify(data)),
+    remove: (db, key) => void db.prepare('DELETE FROM ajustements WHERE consigne = ?').run(key),
+  },
+};
+
+/** One PUT route per record kind (and a DELETE where records can be removed), all from the RECORDS table. */
+function mountRecords(app: Hono, db: DatabaseSync) {
+  const mount = <K extends RecordName>(name: K) => {
+    const record = RECORDS[name] as unknown as { segment: string; schema: ZodType<RecordData<K>>; key: (data: RecordData<K>) => string };
+    const writer = WRITERS[name];
+    app.put(`/api/${record.segment}/:id`, async (c) => {
+      const data = await parse(c, record.schema);
+      samePath(c, record.key(data));
+      writer.upsert(db, data);
+      return c.body(null, 204);
+    });
+    if (writer.remove) {
+      app.delete(`/api/${record.segment}/:id`, (c) => {
+        writer.remove!(db, c.req.param('id'));
+        return c.body(null, 204);
+      });
+    }
+  };
+  (Object.keys(RECORDS) as RecordName[]).forEach((name) => mount(name));
 }
 
 /** Which Exercices have a picture, with a version that changes on each upload so the phone knows to fetch it again. */
@@ -192,73 +260,7 @@ export function createApp(db: DatabaseSync): Hono {
     return c.body(null, 204);
   });
 
-  app.put('/api/entrainements/:id', async (c) => {
-    const data = await parse(c, entrainement);
-    samePath(c, data.id);
-    db.prepare(
-      `INSERT INTO entrainements (id, date, kind, termine, json, updated_at) VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT (id) DO UPDATE SET date = excluded.date, kind = excluded.kind, termine = excluded.termine,
-         json = excluded.json, updated_at = excluded.updated_at`,
-    ).run(data.id, data.date, data.kind, data.termine ? 1 : 0, JSON.stringify(data), now());
-    return c.body(null, 204);
-  });
-
-  app.delete('/api/entrainements/:id', (c) => {
-    db.prepare('DELETE FROM entrainements WHERE id = ?').run(c.req.param('id'));
-    return c.body(null, 204);
-  });
-
-  app.put('/api/parcours/:id', async (c) => {
-    const data = await parse(c, etapeParcours);
-    samePath(c, data.id);
-    db.prepare(
-      `INSERT INTO parcours (id, niveau, debut, boucle, created_at) VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT (id) DO UPDATE SET niveau = excluded.niveau, debut = excluded.debut, boucle = excluded.boucle`,
-    ).run(data.id, data.niveau, data.debut, data.boucle ? 1 : 0, now());
-    return c.body(null, 204);
-  });
-
-  app.delete('/api/parcours/:id', (c) => {
-    db.prepare('DELETE FROM parcours WHERE id = ?').run(c.req.param('id'));
-    return c.body(null, 204);
-  });
-
-  app.put('/api/reprises/:id', async (c) => {
-    const data = await parse(c, reprise);
-    samePath(c, data.id);
-    db.prepare(
-      `INSERT INTO reprises (id, consigne, date, kind, depart) VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT (id) DO UPDATE SET consigne = excluded.consigne, date = excluded.date, kind = excluded.kind, depart = excluded.depart`,
-    ).run(data.id, data.consigne, data.date, data.kind, JSON.stringify(data.depart));
-    return c.body(null, 204);
-  });
-
-  app.put('/api/exercices-actuels/:id', async (c) => {
-    const data = await parse(c, exerciceActuel);
-    samePath(c, data.consigne);
-    db.prepare('INSERT INTO exercices_actuels (consigne, exercice) VALUES (?, ?) ON CONFLICT (consigne) DO UPDATE SET exercice = excluded.exercice').run(
-      data.consigne,
-      data.exercice,
-    );
-    return c.body(null, 204);
-  });
-
-  app.put('/api/programmes-actuels/:id', async (c) => {
-    const data = await parse(c, programmeActuel);
-    samePath(c, data.niveau);
-    db.prepare('INSERT INTO programmes_actuels (niveau, partie) VALUES (?, ?) ON CONFLICT (niveau) DO UPDATE SET partie = excluded.partie').run(
-      data.niveau,
-      data.partie,
-    );
-    return c.body(null, 204);
-  });
-
-  app.put('/api/notes/:id', async (c) => {
-    const data = await parse(c, noteExercice);
-    samePath(c, data.exercice);
-    db.prepare('INSERT INTO notes (exercice, note) VALUES (?, ?) ON CONFLICT (exercice) DO UPDATE SET note = excluded.note').run(data.exercice, data.note);
-    return c.body(null, 204);
-  });
+  mountRecords(app, db);
 
   // Pictures are sent as raw bytes, already shrunk by the phone.
   app.put('/api/images/:id', bodyLimit({ maxSize: 3 * 1024 * 1024, onError: () => { throw new HttpError(413, 'Image trop volumineuse'); } }), async (c) => {
@@ -283,21 +285,6 @@ export function createApp(db: DatabaseSync): Hono {
 
   app.delete('/api/images/:id', (c) => {
     db.prepare('DELETE FROM images WHERE exercice = ?').run(c.req.param('id'));
-    return c.body(null, 204);
-  });
-
-  app.put('/api/ajustements/:id', async (c) => {
-    const data = await parse(c, ajustement);
-    samePath(c, data.consigne);
-    db.prepare('INSERT INTO ajustements (consigne, json) VALUES (?, ?) ON CONFLICT (consigne) DO UPDATE SET json = excluded.json').run(
-      data.consigne,
-      JSON.stringify(data),
-    );
-    return c.body(null, 204);
-  });
-
-  app.delete('/api/ajustements/:id', (c) => {
-    db.prepare('DELETE FROM ajustements WHERE consigne = ?').run(c.req.param('id'));
     return c.body(null, 204);
   });
 

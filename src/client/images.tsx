@@ -4,7 +4,8 @@ import type { ImageExercice, Methode } from '../shared/methode.ts';
 import { useImageSrc } from './image-cache.ts';
 import { codeDepuisNom, descriptionExercice } from './lookup.ts';
 import { isAndroidApp } from './native.ts';
-import { online, useStore } from './store.ts';
+import { clearImage, editExercice, resetExercice, setImage } from './exercice-media.ts';
+import { useStore } from './store.ts';
 
 /** The picture uploaded for an Exercice, if any. */
 export function useImage(exercice: string) {
@@ -66,7 +67,7 @@ export function ImporterImages({ methode }: { methode: Methode }) {
         continue;
       }
       try {
-        await online('PUT', `/api/images/${encodeURIComponent(code)}`, await reduire(file));
+        await setImage(code, await reduire(file));
         lignes.push({ ok: true, texte: `${code} ✓` });
       } catch {
         lignes.push({ ok: false, texte: `⚠ ${code} : échec, réessayez` });
@@ -125,7 +126,6 @@ export function EditerExercice({ methode, exercice }: { methode: Methode; exerci
   }, [nomEnregistre, descriptionEnregistree]);
   if (isAndroidApp) return null;
 
-  const path = `/api/exercices/${encodeURIComponent(exercice)}`;
   const inchange = nom.trim() === nomEnregistre && texte.trim() === descriptionEnregistree;
 
   async function lancer(action: () => Promise<unknown>, fait: 'ok' | 'retour') {
@@ -181,7 +181,7 @@ export function EditerExercice({ methode, exercice }: { methode: Methode; exerci
           onClick={() =>
             void lancer(
               () =>
-                online('PUT', path, {
+                editExercice(exercice, {
                   ...(nom.trim() !== nomEnregistre ? { nom } : {}),
                   ...(texte.trim() !== descriptionEnregistree ? { description: texte } : {}),
                 }),
@@ -200,7 +200,7 @@ export function EditerExercice({ methode, exercice }: { methode: Methode; exerci
             <button type="button" className="button" autoFocus onClick={() => setConfirmer(false)}>
               Annuler
             </button>
-            <button type="button" className="button button-danger" disabled={busy} onClick={() => void lancer(() => online('DELETE', path), 'retour')}>
+            <button type="button" className="button button-danger" disabled={busy} onClick={() => void lancer(() => resetExercice(exercice), 'retour')}>
               {busy ? 'Rétablissement…' : 'Revenir à la version du fichier'}
             </button>
           </div>
@@ -250,7 +250,6 @@ function GererImageBureau({ exercice }: { exercice: string }) {
   const { reachable } = useStore();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const path = `/api/images/${encodeURIComponent(exercice)}`;
 
   async function run(action: () => Promise<unknown>, done: string) {
     setBusy(true);
@@ -279,7 +278,7 @@ function GererImageBureau({ exercice }: { exercice: string }) {
             onChange={(e) => {
               const file = e.target.files?.[0];
               e.target.value = '';
-              if (file) void run(async () => online('PUT', path, await reduire(file)), 'Image enregistrée ✓');
+              if (file) void run(async () => setImage(exercice, await reduire(file)), 'Image enregistrée ✓');
             }}
           />
         </label>
@@ -289,7 +288,7 @@ function GererImageBureau({ exercice }: { exercice: string }) {
             className="button button-small"
             disabled={busy || !reachable}
             onClick={() => {
-              if (confirm(`Supprimer l’image de ${exercice} ?`)) void run(() => online('DELETE', path), 'Image supprimée');
+              if (confirm(`Supprimer l’image de ${exercice} ?`)) void run(() => clearImage(exercice), 'Image supprimée');
             }}
           >
             Supprimer

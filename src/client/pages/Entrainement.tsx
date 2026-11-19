@@ -3,7 +3,7 @@ import type { Carnet, Entrainement as EntrainementData, ExerciceFait } from '../
 import { consigneEffective } from '../../shared/consigne.ts';
 import { enSecondes, type Bloc, type Cible, type Methode, type Niveau, type Partie } from '../../shared/methode.ts';
 import { objectifsDuJour } from '../../shared/objectif.ts';
-import type { Operation } from '../../shared/operations.ts';
+import { terminerEntrainement } from '../../shared/parcours.ts';
 import { blocsFaitsDepuisDebut, blocsProposes, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { nouvelEntrainement, reposApres, serieCourante, suggestionsFin } from '../../shared/seance.ts';
@@ -408,13 +408,7 @@ function Resume({ methode, carnet, brouillon, niveau, partie }: { methode: Metho
   const [acceptees, setAcceptees] = useState<number[]>([]);
 
   function enregistrer() {
-    const ops: Operation[] = [{ kind: 'entrainement', data: { ...e, termine: true } }];
-    suggestions.forEach((s, i) => {
-      if (!acceptees.includes(i)) return;
-      if (s.kind === 'progression' && s.consigne) ops.push({ kind: 'exercice-actuel', data: { consigne: s.consigne, exercice: s.vers } });
-      if (s.kind === 'programme') ops.push({ kind: 'programme-actuel', data: { niveau: niveau.id, partie: s.vers } });
-    });
-    void enqueue(...ops);
+    void enqueue(...terminerEntrainement(e, niveau, suggestions, acceptees));
     void saveBrouillon(null);
     navigate('/', { replace: true });
   }

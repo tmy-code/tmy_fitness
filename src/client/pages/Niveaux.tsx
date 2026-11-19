@@ -3,7 +3,7 @@ import { departBoucle } from '../../shared/boucle.ts';
 import type { Carnet } from '../../shared/carnet.ts';
 import { consigneEffective, exerciceActuel } from '../../shared/consigne.ts';
 import { consignesOf, type Methode, type Niveau } from '../../shared/methode.ts';
-import type { Operation } from '../../shared/operations.ts';
+import { demarrerBoucle } from '../../shared/parcours.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { etapeActuelle, libelleFrequence, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
 import { newId } from '../api.ts';
@@ -112,14 +112,8 @@ export function BouclePage({ methode, carnet, niveauId }: { methode: Methode; ca
   if (!niveau) return <NotFound what="Niveau" />;
 
   function commencer() {
-    const date = todayIso();
-    const ops: Operation[] = [{ kind: 'parcours', data: { id: newId(), niveau: niveau!.id, debut: date, boucle: true } }];
-    for (const l of lignes) {
-      if (!l.consigne.series.some((s) => s.cible.type === 'reps')) continue;
-      ops.push({ kind: 'reprise', data: { id: newId(), consigne: l.consigne.id, date, kind: 'boucle', depart: departs.get(l.consigne.id)! } });
-    }
-    if (niveau!.organisation === 'programmes') ops.push({ kind: 'programme-actuel', data: { niveau: niveau!.id, partie: niveau!.parties[0]!.id } });
-    void enqueue(...ops);
+    const choisis = lignes.map((l) => ({ consigne: l.consigne, depart: departs.get(l.consigne.id)! }));
+    void enqueue(...demarrerBoucle(niveau!, choisis, newId, todayIso()));
     navigate('/');
   }
 

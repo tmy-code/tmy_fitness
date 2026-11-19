@@ -4,7 +4,8 @@ import type { Carnet } from '../../shared/carnet.ts';
 import { blocsFaitsDepuisDebut, etapeActuelle, ligneFrequence, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
 import { Layout, NeedsConnection } from '../components.tsx';
 import { formatDate, pluriel, todayIso } from '../format.ts';
-import { online, useStore } from '../store.ts';
+import { loadMethode } from '../exercice-media.ts';
+import { useStore } from '../store.ts';
 
 export function AccueilPage({ methode, carnet }: { methode: Methode | null; carnet: Carnet }) {
   const { brouillon } = useStore();
@@ -122,7 +123,7 @@ export function ChargerMethode() {
         setMessage(`Fichier invalide : ${issue.path.join('.')} ${issue.message}`);
         return;
       }
-      await online('PUT', '/api/methode', parsed.data);
+      await loadMethode(parsed.data);
       setMessage('Méthode chargée ✓');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Échec du chargement');
