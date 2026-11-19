@@ -61,6 +61,10 @@ _Avoid_: Étirements, stretching session
 One workout actually performed on a given day, following all of one Séance or Programme of the current Niveau, or only some of its Blocs when using a Split; it is what the Carnet records.
 _Avoid_: Séance (in the sense of "ma séance d'hier"), workout, session
 
+**Brouillon**:
+An Entraînement started but not yet finished, kept on the phone only; it joins the Carnet (and is sent to the server) as a whole when the trainee finishes it, and can be abandoned.
+_Avoid_: draft, entraînement en cours (as a name)
+
 **Série**:
 One uninterrupted run of an exercise, ended by reaching the target or the Échec.
 _Avoid_: Set

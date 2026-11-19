@@ -1,78 +1,43 @@
 import { useSyncExternalStore } from 'react';
 import { get, set } from 'idb-keyval';
-import type { Carnet, Entrainement } from '../shared/carnet.ts';
-import type { ImageExercice, Methode } from '../shared/methode.ts';
-import { applyOperations, enqueueOp, opRequest, type Operation } from '../shared/operations.ts';
-import { ApiError, NetworkError, request, VersionError } from './api.ts';
-import { isAndroidApp } from './native.ts';
+import type { Operation } from '../shared/operations.ts';
+import { request, VersionError } from './api.ts';
+import { loadBrouillon, persistBrouillon, type Brouillon } from './brouillon.ts';
 import { garderImages } from './image-cache.ts';
+import { isAndroidApp } from './native.ts';
 import { serverAddress, setServerAddress } from './server.ts';
+import { createSyncEngine, type Snapshot, type SyncState } from './sync-engine.ts';
 
-export interface Snapshot {
-  methode: Methode | null;
-  carnet: Carnet;
-  images: ImageExercice[];
-}
+export type { Brouillon, Snapshot };
 
-/** The Entraînement in progress: kept on the phone only, and sent as a whole when finished. */
-export interface Brouillon {
-  entrainement: Entrainement;
-  /** The running rest timer, as a wall-clock end so it survives the app being closed and reopened. */
-  repos: { fin: number; total: number } | null;
-}
-
-export interface StoreState {
-  /** The last copy received from the server, kept on the phone for offline use. */
-  serverSnapshot: Snapshot | null;
-  /** serverSnapshot with queued changes applied: what the screens show. */
-  view: Snapshot | null;
-  outbox: Operation[];
-  /** Whether the last request reached the server. navigator.onLine is unreliable with weak signal. */
-  reachable: boolean;
-  /** Whether the server has been reached since the app opened; until then "synced" would be a guess. */
-  contacted: boolean;
-  syncing: boolean;
-  /** Set when the server speaks another API version: the queue is kept, and nothing is sent until one side is updated. */
-  versionMismatch: VersionError['behind'] | null;
-  /** Queued changes the server refused; shown so nothing disappears silently. */
-  rejected: { op: Operation; reason: string }[];
+export interface StoreState extends SyncState {
   brouillon: Brouillon | null;
   loaded: boolean;
   /** The server's address; '' in the browser, where the screens come from the server itself. */
   serveur: string;
 }
 
-let state: StoreState = {
-  serverSnapshot: null,
-  view: null,
-  outbox: [],
-  reachable: true,
-  contacted: false,
-  syncing: false,
-  versionMismatch: null,
-  rejected: [],
-  brouillon: null,
-  loaded: false,
-  serveur: serverAddress(),
-};
-
 /** The Android app does not know where the server is until its address is typed on first launch. */
-export function needsServerAddress(s: StoreState = state): boolean {
+export function needsServerAddress(s: Pick<StoreState, 'serveur'> = local): boolean {
   return isAndroidApp && s.serveur === '';
 }
 
+const engine = createSyncEngine({
+  storage: { get: (key) => get(key), set: (key, value) => set(key, value) },
+  request,
+  afterSnapshot: (snapshot) => void garderImages(snapshot.images),
+  ready: () => !needsServerAddress(),
+});
+
+let local = { brouillon: null as Brouillon | null, loaded: false, serveur: serverAddress() };
+let combined: StoreState = { ...engine.getState(), ...local };
 const listeners = new Set<() => void>();
 
-function update(patch: Partial<StoreState>) {
-  const next = { ...state, ...patch };
-  if ('serverSnapshot' in patch || 'outbox' in patch) {
-    const s = next.serverSnapshot;
-    // Copies saved before pictures existed have no list of them.
-    next.view = s ? { methode: s.methode, carnet: applyOperations(s.carnet, next.outbox), images: s.images ?? [] } : null;
-  }
-  state = next;
+function refresh() {
+  combined = { ...engine.getState(), ...local };
   listeners.forEach((l) => l());
 }
+engine.subscribe(refresh);
 
 export function useStore(): StoreState {
   return useSyncExternalStore(
@@ -80,95 +45,23 @@ export function useStore(): StoreState {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    () => state,
+    () => combined,
   );
 }
 
 export function currentState(): StoreState {
-  return state;
+  return combined;
 }
 
-// IndexedDB can fail (private browsing, storage pressure); the app must still work online.
-async function persist(key: 'snapshot' | 'outbox' | 'rejected' | 'brouillon', value: unknown) {
-  try {
-    await set(key, value);
-  } catch (error) {
-    console.warn('Could not save offline copy', error);
-  }
-}
-
-async function load<T>(key: string): Promise<T | undefined> {
-  try {
-    return await get<T>(key);
-  } catch {
-    return undefined;
-  }
-}
-
-async function fetchSnapshot() {
-  const snapshot = await request<Snapshot>('GET', '/api/snapshot');
-  update({ serverSnapshot: snapshot, reachable: true, contacted: true });
-  await persist('snapshot', snapshot);
-  void garderImages(snapshot.images);
-}
-
-/** Sends queued changes in order. Stops at the first network failure and keeps the rest for later. */
-async function flush(): Promise<void> {
-  if (state.syncing || needsServerAddress()) return;
-  update({ syncing: true });
-  try {
-    // Checks the API version before sending anything, so a queued change never reaches a server that would misread it.
-    await request('GET', '/api/health');
-    update({ versionMismatch: null });
-    while (state.outbox.length > 0) {
-      const op = state.outbox[0]!;
-      const { method, path, body } = opRequest(op);
-      try {
-        await request(method, path, body);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          update({ rejected: [...state.rejected, { op, reason: error.message }] });
-          await persist('rejected', state.rejected);
-        } else {
-          throw error;
-        }
-      }
-      update({ outbox: state.outbox.slice(1), reachable: true });
-      await persist('outbox', state.outbox);
-    }
-    await fetchSnapshot();
-  } catch (error) {
-    if (error instanceof NetworkError) update({ reachable: false });
-    else if (error instanceof VersionError) update({ reachable: true, contacted: true, versionMismatch: error.behind });
-    else throw error;
-  } finally {
-    update({ syncing: false });
-  }
-}
-
-export function sync(): Promise<void> {
-  return flush();
-}
-
-/** Saves changes: shown at once, sent to the server now or when back in range. */
-export async function enqueue(...ops: Operation[]): Promise<void> {
-  update({ outbox: ops.reduce(enqueueOp, state.outbox) });
-  await persist('outbox', state.outbox);
-  void flush();
-}
+export const sync = engine.sync;
+export const enqueue: (...ops: Operation[]) => Promise<void> = engine.enqueue;
+export const dismissRejected = engine.dismissRejected;
 
 /** Runs a change that needs a connection (uploading the Méthode), then refreshes the offline copy. */
 export async function online<T>(method: string, path: string, body?: unknown): Promise<T> {
-  try {
-    const result = await request<T>(method, path, body);
-    update({ reachable: true });
-    await flush();
-    return result;
-  } catch (error) {
-    if (error instanceof NetworkError) update({ reachable: false });
-    if (error instanceof VersionError) update({ versionMismatch: error.behind });
-    throw error;
-  }
+  const result = await engine.observe(() => request<T>(method, path, body));
+  await engine.sync();
+  return result;
 }
 
 /**
@@ -185,36 +78,31 @@ export async function connecterServeur(address: string): Promise<void> {
     if (error instanceof VersionError) throw error;
     throw new Error('Aucun serveur TMY Fitness ne répond à cette adresse. Vérifiez l’adresse et que Tailscale est connecté.');
   }
-  update({ serveur: serverAddress(), versionMismatch: null });
-  await flush();
+  local = { ...local, serveur: serverAddress() };
+  refresh();
+  await engine.sync();
 }
 
 export async function saveBrouillon(brouillon: Brouillon | null): Promise<void> {
-  update({ brouillon });
-  await persist('brouillon', brouillon);
-}
-
-export async function dismissRejected(): Promise<void> {
-  update({ rejected: [] });
-  await persist('rejected', []);
+  local = { ...local, brouillon };
+  refresh();
+  await persistBrouillon(brouillon);
 }
 
 export async function initStore(): Promise<void> {
-  const [snapshot, outbox, rejected, brouillon] = await Promise.all([
-    load<Snapshot>('snapshot'),
-    load<Operation[]>('outbox'),
-    load<StoreState['rejected']>('rejected'),
-    load<Brouillon>('brouillon'),
-  ]);
-  update({ serverSnapshot: snapshot ?? null, outbox: outbox ?? [], rejected: rejected ?? [], brouillon: brouillon ?? null, loaded: true });
-  void flush();
+  const [, brouillon] = await Promise.all([engine.hydrate(), loadBrouillon()]);
+  local = { ...local, brouillon, loaded: true };
+  refresh();
+  void engine.sync();
 
-  window.addEventListener('online', () => void flush());
+  // The engine has no timers or listeners: these triggers decide when to try sending.
+  window.addEventListener('online', () => void engine.sync());
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') void flush();
+    if (document.visibilityState === 'visible') void engine.sync();
   });
   // Retry queued changes regularly while the app is open, since "online" events are unreliable.
   setInterval(() => {
-    if (state.outbox.length > 0 || !state.reachable) void flush();
+    const s = engine.getState();
+    if (s.outbox.length > 0 || !s.reachable) void engine.sync();
   }, 30_000);
 }
