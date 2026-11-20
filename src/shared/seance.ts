@@ -1,6 +1,6 @@
 import type { Carnet, Entrainement } from './carnet.ts';
 import { consigneEffective, departEtape, exerciceActuel } from './consigne.ts';
-import type { Niveau, Partie } from './methode.ts';
+import type { Consigne, Niveau, Partie } from './methode.ts';
 import { objectifsDuJour } from './objectif.ts';
 import { suggestionProgramme, suggestionProgression, type Suggestion } from './progression.ts';
 
@@ -14,6 +14,14 @@ export function dernierLest(exercice: string, entrainements: Entrainement[]): nu
   return dernier?.lest;
 }
 
+/** The Objectifs du jour of an Exercice, with the trainee's Période d'entretien and today's lest taken into account. */
+export function objectifsAvecReglages(consigne: Consigne, exercice: string, carnet: Carnet, lest?: number) {
+  return objectifsDuJour(consigne, exercice, carnet.entrainements, carnet.reprises, departEtape(consigne, exercice), {
+    lest,
+    entretien: !!carnet.reglages.entretien,
+  });
+}
+
 /**
  * A new Entraînement on a Séance or Programme, with each Série's Objectif du jour filled in.
  * `blocs` lists the Blocs to do today (a Split); all of them when omitted.
@@ -24,8 +32,8 @@ export function nouvelEntrainement(niveau: Niveau, partie: Partie, carnet: Carne
     b.consignes.map((c) => {
       const consigne = consigneEffective(c, carnet);
       const exercice = exerciceActuel(consigne, carnet);
-      const { series } = objectifsDuJour(consigne, exercice, carnet.entrainements, carnet.reprises, departEtape(consigne, exercice));
       const lest = dernierLest(exercice, carnet.entrainements);
+      const { series } = objectifsAvecReglages(consigne, exercice, carnet, lest);
       return { ref: c.id, exercice, ...(lest ? { lest } : {}), series: series.map((s) => ({ objectif: s.objectif, resultat: null, forcees: 0 })) };
     }),
   );

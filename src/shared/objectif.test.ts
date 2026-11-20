@@ -96,6 +96,30 @@ describe('plateau Consigne', () => {
   });
 });
 
+describe('lest and Période d’entretien', () => {
+  const past = [entrainementDemo('2026-11-02', [fait(a1.id, 'A1', [[3, 12], [3, 12], [3, 10]])])];
+
+  it('keeps climbing while the lest stays the same', () => {
+    expect(objectifs(objectifsDuJour(a1, 'A1', past, [], undefined, { lest: 0 }))).toEqual([13, 13, 11]);
+  });
+
+  it('restarts lower, like a Mini-boucle, when the lest changes', () => {
+    const r = objectifsDuJour(a1, 'A1', past, [], undefined, { lest: 5 });
+    expect(objectifs(r)).toEqual([8, 8, 7]);
+    expect(r.ajuste).toBe('lest');
+  });
+
+  it('trains at 80 % of the best Résultat during a Période d’entretien', () => {
+    const r = objectifsDuJour(a1, 'A1', past, [], undefined, { entretien: true });
+    expect(objectifs(r)).toEqual([10, 10, 8]);
+    expect(r.ajuste).toBe('entretien');
+  });
+
+  it('leaves max and timed Séries alone and uses the Consigne target without history', () => {
+    expect(objectifs(objectifsDuJour(a1, 'A1', [], [], undefined, { entretien: true }))).toEqual([3, 3, 3]);
+  });
+});
+
 describe('departBoucle', () => {
   it('suggests about 65% of the best Résultat on each Série', () => {
     const past = [

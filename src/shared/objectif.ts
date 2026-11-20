@@ -12,6 +12,20 @@ export interface ObjectifSerie {
 export interface Precedent {
   date: string;
   series: SerieFaite[];
+  /** The lest (kg) used that day; absent means none. */
+  lest?: number;
+}
+
+/** A Mini-boucle starts around 65 % of the last Résultat; the same share is used when the lest changes (p. 77–79). */
+export const RATIO_LEST = 0.65;
+/** The Période d'entretien trains at 80 % of one's best (p. 82). */
+export const RATIO_ENTRETIEN = 0.8;
+
+export interface OptionsObjectif {
+  /** The lest planned for today's Exercice. */
+  lest?: number;
+  /** A Période d'entretien is running. */
+  entretien?: boolean;
 }
 
 /** Finished Entraînements where this Exercice was done for this Consigne, oldest first. */
@@ -21,7 +35,7 @@ export function historique(consigneId: string, exercice: string, entrainements: 
     .flatMap((e) =>
       e.exercices
         .filter((x) => x.ref === consigneId && x.exercice === exercice && x.series.some((s) => s.resultat !== null))
-        .map((x) => ({ date: e.date, series: x.series })),
+        .map((x) => ({ date: e.date, series: x.series, ...(x.lest ? { lest: x.lest } : {}) })),
     )
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -57,7 +71,8 @@ export function objectifsDuJour(
   entrainements: Entrainement[],
   reprises: Reprise[],
   depart?: number[],
-): { series: ObjectifSerie[]; precedent: Precedent | null } {
+  options: OptionsObjectif = {},
+): { series: ObjectifSerie[]; precedent: Precedent | null; ajuste: 'lest' | 'entretien' | null } {
   const reprise = derniereReprise(consigne.id, reprises);
   const passe = historique(consigne.id, exercice, entrainements);
   const precedent = passe.at(-1) ?? null;
@@ -78,5 +93,21 @@ export function objectifsDuJour(
     }
     return { cible, objectif: start?.[i] ?? start?.at(-1) ?? cible.n, aBattre: avant };
   });
-  return { series, precedent };
+
+  const reps = (i: number) => consigne.series[i]?.cible.type === 'reps';
+  if (options.entretien && passe.length > 0) {
+    const meilleur = (i: number) => Math.max(0, ...passe.map((p) => p.series[i]?.resultat ?? 0));
+    const ajustees = series.map((s, i) => (reps(i) && meilleur(i) > 0 ? { ...s, objectif: Math.max(1, Math.round(meilleur(i) * RATIO_ENTRETIEN)) } : s));
+    return { series: ajustees, precedent, ajuste: 'entretien' };
+  }
+  if (base && precedent && (precedent.lest ?? 0) !== (options.lest ?? 0)) {
+    const bas = series.map((s, i) => {
+      const dernier = precedent.series[i]?.resultat;
+      return reps(i) && dernier ? Math.max(1, Math.round(dernier * RATIO_LEST)) : null;
+    });
+    const commun = consigne.plateau ? Math.min(...bas.filter((v): v is number => v !== null)) : null;
+    const ajustees = series.map((s, i) => (bas[i] === null ? s : { ...s, objectif: commun ?? bas[i]! }));
+    return { series: ajustees, precedent, ajuste: 'lest' };
+  }
+  return { series, precedent, ajuste: null };
 }

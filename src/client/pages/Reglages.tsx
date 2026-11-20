@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Ajustement, Carnet } from '../../shared/carnet.ts';
 import type { Cible, Frequence, Methode, SerieConsigne } from '../../shared/methode.ts';
 import { libelleFrequence, niveauActuel } from '../../shared/prochain.ts';
+import { semainesDepuis } from '../../shared/stagnation.ts';
+import { formatDate, pluriel, todayIso } from '../format.ts';
 import { Layout, NotFound } from '../components.tsx';
 import { EditerExercice, GererImage, ImporterImages, PhotoExercice } from '../images.tsx';
 import { indexConsignes, nomExercice } from '../lookup.ts';
@@ -47,6 +49,8 @@ export function ReglagesPage({ methode, carnet }: { methode: Methode; carnet: Ca
           ))}
         </select>
       </section>
+
+      <Entretien carnet={carnet} />
 
       <section className="card">
         <h2>Exporter le Carnet</h2>
@@ -218,5 +222,33 @@ export function AjusterPage({ methode, carnet, consigneId }: { methode: Methode;
         </button>
       ) : null}
     </Layout>
+  );
+}
+
+/** The Période d'entretien (p. 82): 3 to 6 months a year at 80 % of one's best, to rest the nervous system and anchor progress. */
+function Entretien({ carnet }: { carnet: Carnet }) {
+  const entretien = carnet.reglages.entretien;
+  const regler = (valeur: { debut: string } | null) => void enqueue({ kind: 'reglages', data: { ...carnet.reglages, entretien: valeur } });
+  return (
+    <section className="card">
+      <h2>Période d’entretien</h2>
+      <p className="muted small">
+        Le livre conseille 6 à 9 mois de progression par an, puis 3 à 6 mois à 80 % de vos meilleures performances pour reposer le système nerveux et ancrer les progrès.
+      </p>
+      {entretien ? (
+        <>
+          <p className="small">
+            En cours depuis le {formatDate(entretien.debut)} ({pluriel(semainesDepuis(entretien.debut, todayIso()), 'semaine', 'semaines')}) : les objectifs sont à 80 % de vos meilleurs résultats.
+          </p>
+          <button type="button" className="button button-block" onClick={() => regler(null)}>
+            Terminer la période d’entretien
+          </button>
+        </>
+      ) : (
+        <button type="button" className="button button-block" onClick={() => regler({ debut: todayIso() })}>
+          Commencer une période d’entretien
+        </button>
+      )}
+    </section>
   );
 }

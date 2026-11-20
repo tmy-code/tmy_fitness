@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { Carnet } from '../../shared/carnet.ts';
 import { consigneEffective, departEtape, exerciceActuel } from '../../shared/consigne.ts';
 import type { Methode } from '../../shared/methode.ts';
-import { derniereReprise, objectifsDuJour } from '../../shared/objectif.ts';
+import { derniereReprise } from '../../shared/objectif.ts';
+import { dernierLest, objectifsAvecReglages } from '../../shared/seance.ts';
 import { enStagnation } from '../../shared/stagnation.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { newId } from '../api.ts';
@@ -18,7 +19,7 @@ export function ConsignePage({ methode, carnet, consigneId }: { methode: Methode
   if (!lieu) return <NotFound what="Consigne" />;
   const consigne = consigneEffective(lieu.consigne, carnet);
   const exercice = exerciceActuel(consigne, carnet);
-  const { series, precedent } = objectifsDuJour(consigne, exercice, carnet.entrainements, carnet.reprises, departEtape(consigne, exercice));
+  const { series, precedent, ajuste } = objectifsAvecReglages(consigne, exercice, carnet, dernierLest(exercice, carnet.entrainements));
   const reprise = derniereReprise(consigne.id, carnet.reprises);
   const setExercice = (code: string) => void enqueue({ kind: 'exercice-actuel', data: { consigne: consigne.id, exercice: code } });
 
@@ -39,6 +40,7 @@ export function ConsignePage({ methode, carnet, consigneId }: { methode: Methode
         </ul>
         {consigne.rythme ? <p className="muted small">Rythme {consigne.rythme}</p> : null}
         {consigne.note ? <p className="consigne-note">{consigne.note}</p> : null}
+        {ajuste === 'entretien' ? <p className="muted small">Période d’entretien : objectifs à 80 % de vos meilleurs résultats.</p> : null}
         {precedent ? <p className="muted small">Dernière fois ({formatDate(precedent.date)}) : {precedent.series.map((s) => s.resultat ?? '—').join(' · ')}</p> : null}
         {reprise ? <p className="muted small">{reprise.kind === 'boucle' ? 'Boucle' : 'Mini-boucle'} depuis le {formatDate(reprise.date)} : départ {reprise.depart.join(' · ')}</p> : null}
         <a className="link" href={`#/ajuster/${consigne.id}`}>
@@ -79,7 +81,7 @@ export function ConsignePage({ methode, carnet, consigneId }: { methode: Methode
       )}
 
       <Remplacement methode={methode} actuel={exercice} prevu={consigne.exercice} remplace={exercice !== consigne.exercice && etapeDe(consigne, exercice) === -1} onChoose={setExercice} />
-      {enStagnation(exercice, carnet) ? (
+      {!carnet.reglages.entretien && enStagnation(exercice, carnet) ? (
         <p className="banner banner-warn">Pas de nouveau record depuis 3 entraînements sur cet exercice : essayez la Mini-boucle ci-dessous (les autres exercices continuent normalement).</p>
       ) : null}
       <MiniBoucle consigneId={consigne.id} series={consigne.series} objectifs={series.map((s) => s.objectif)} />

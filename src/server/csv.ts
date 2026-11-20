@@ -14,6 +14,7 @@ const COLUMNS = [
   'objectif',
   'resultat',
   'repetitions_forcees',
+  'lest_kg',
   'note',
 ];
 
@@ -50,6 +51,7 @@ export function exportCsv(methode: Methode | null, entrainements: Entrainement[]
             s.objectif,
             s.resultat,
             s.forcees || null,
+            x.lest ?? null,
             i === 0 ? x.note : null,
           ]
             .map(cell)

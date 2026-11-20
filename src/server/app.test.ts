@@ -283,9 +283,9 @@ describe('export', () => {
     const res = await app.request('/api/export.csv');
     const lines = (await res.text()).replace(/^﻿/, '').trim().split('\r\n');
     expect(lines).toEqual([
-      'date;type;niveau;seance_ou_programme;bloc;consigne;exercice;nom_exercice;serie;objectif;resultat;repetitions_forcees;note',
-      '2026-11-02;entrainement;Niveau démo 1;Premier programme;Bloc Haut;demo-1-p1-a1;A1;Pompes démo, mains surélevées;1;3;4;1;"coudes; serrés"',
-      '2026-11-02;entrainement;Niveau démo 1;Premier programme;Bloc Haut;demo-1-p1-a1;A1;Pompes démo, mains surélevées;2;3;3;;',
+      'date;type;niveau;seance_ou_programme;bloc;consigne;exercice;nom_exercice;serie;objectif;resultat;repetitions_forcees;lest_kg;note',
+      '2026-11-02;entrainement;Niveau démo 1;Premier programme;Bloc Haut;demo-1-p1-a1;A1;Pompes démo, mains surélevées;1;3;4;1;;"coudes; serrés"',
+      '2026-11-02;entrainement;Niveau démo 1;Premier programme;Bloc Haut;demo-1-p1-a1;A1;Pompes démo, mains surélevées;2;3;3;;;',
     ]);
   });
 });
