@@ -116,7 +116,10 @@ _Avoid_: Loop, reset
 Dropping the Objectif du jour of a single stalled Exercice to a lower starting number and climbing up again from there, while the rest of the Niveau continues normally.
 
 **Boucle augmentée**:
-A Niveau built as a structured review of earlier Niveaux (Niveau 11 and Niveau 20).
+A Niveau built as a structured review of earlier Niveaux (Niveau 11 and Niveau 20): a protocol chaining those Niveaux, shown as a list of steps, each startable as a Boucle.
+
+**Plateau**:
+Séries meant to reach the same number of répétitions; the number only goes up once every Série has reached it (8-8-8-7-7-6 aims for 8 everywhere, not 9).
 
 **Parcours**:
 The timeline of Niveaux the trainee has gone through, including Boucles (Niveau 2 → 3 → 4 → 5 → Boucle 2 → 3…).
