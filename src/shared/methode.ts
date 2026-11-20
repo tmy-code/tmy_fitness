@@ -32,6 +32,8 @@ export function enSecondes(c: Cible): boolean {
 
 export const serieConsigne = z.object({
   cible,
+  /** Répétitions added to this Série alone after a successful Entraînement, overriding the Consigne's increment (7–15–max: only the first climbs). */
+  increment: z.number().int().min(0).max(10).optional(),
   /** Temps de repos after this Série (before the next Série, or the next Consigne for the last one). */
   repos: seconds,
 });
@@ -61,6 +63,8 @@ export const consigne = z.object({
   rythme: z.string().trim().max(100).optional(),
   /** Répétitions added to each Série after a successful Entraînement. */
   increment: z.number().int().min(0).max(10).default(1),
+  /** Séries « en plateau »: all Séries aim for the same number, and the number only goes up once every Série has reached it. */
+  plateau: z.boolean().optional(),
   note: text.optional(),
   progression: z.array(etapeProgression).min(2).optional(),
 });
@@ -166,6 +170,18 @@ export const routineSouplesse = z.object({
 });
 export type RoutineSouplesse = z.infer<typeof routineSouplesse>;
 
+/** A Boucle augmentée (Niveau 11, Niveau 20): a protocol chaining earlier Niveaux, moving on at physical or mental weariness. */
+export const boucleAugmentee = z.object({
+  id,
+  nom: z.string().trim().min(1).max(100),
+  /** The Niveaux to go through, in order. */
+  etapes: z.array(id).min(2).max(12),
+  /** The protocol's own advice (options, lest, Fréquence), in our own words. */
+  note: text.optional(),
+  page: z.number().int().min(1).optional(),
+});
+export type BoucleAugmentee = z.infer<typeof boucleAugmentee>;
+
 export const methode = z
   .object({
     nom: z.string().trim().min(1).max(100),
@@ -174,6 +190,7 @@ export const methode = z
     echauffement: z.array(z.string().trim().min(1).max(200)).default([]),
     tests: z.array(test).default([]),
     niveaux: z.array(niveau),
+    bouclesAugmentees: z.array(boucleAugmentee).default([]),
     souplesse: z.array(routineSouplesse).default([]),
   })
   .superRefine((m, ctx) => {
@@ -205,6 +222,10 @@ export const methode = z
       }
     }
     const niveauIds = new Set(m.niveaux.map((n) => n.id));
+    for (const b of m.bouclesAugmentees) {
+      unique(b.id, 'Boucle augmentée');
+      for (const e of b.etapes) if (!niveauIds.has(e)) issue(`${b.nom} : Niveau ${e} inconnu`);
+    }
     for (const t of m.tests) {
       unique(t.id, 'Test');
       const etapeIds = new Set(t.etapes.map((e) => e.id));

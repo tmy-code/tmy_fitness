@@ -42,6 +42,27 @@ export function NiveauxPage({ methode, carnet }: { methode: Methode; carnet: Car
         ))}
       </section>
 
+      {methode.bouclesAugmentees.map((b) => (
+        <section className="card" key={b.id}>
+          <h2>{b.nom}</h2>
+          <p className="muted small">Enchaînez ces Niveaux, en passant au suivant à la lassitude physique ou mentale.</p>
+          {b.note ? <p className="consigne-note">{b.note}</p> : null}
+          <ol className="etapes">
+            {b.etapes.map((id, i) => {
+              const n = methode.niveaux.find((x) => x.id === id);
+              return n ? (
+                <li key={`${id}-${i}`}>
+                  {n.nom}{' '}
+                  <a className="link" href={`#/boucle/${n.id}`}>
+                    Commencer en Boucle
+                  </a>
+                </li>
+              ) : null;
+            })}
+          </ol>
+        </section>
+      ))}
+
       {actuel ? (
         <section>
           <h2>Boucle</h2>
