@@ -25,7 +25,7 @@ export function CarnetPage({ methode, carnet }: { methode: Methode; carnet: Carn
           <p className="eyebrow">{formatDate(e.date)}</p>
           <h2>{titre(methode, e)}</h2>
           <p className="muted small">
-            {e.exercices.map((x) => `${x.exercice} ${x.series.map((s) => `${s.resultat ?? '—'}${s.forcees ? `+${s.forcees}` : ''}`).join('/')}`).join(' · ')}
+            {e.exercices.map((x) => `${x.exercice}${x.lest ? ` (${x.lest > 0 ? '+' : ''}${x.lest.toLocaleString('fr-FR')} kg)` : ''} ${x.series.map((s) => `${s.resultat ?? '—'}${s.forcees ? `+${s.forcees}` : ''}`).join('/')}`).join(' · ')}
             {e.blocs ? ' · Split' : ''}
           </p>
         </a>

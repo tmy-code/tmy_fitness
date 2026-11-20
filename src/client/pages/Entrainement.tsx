@@ -205,6 +205,7 @@ function EnCours({
         }}
       />
 
+      <LestExercice key={position.exercice} fait={fait} onChange={(lest) => update(brouillon, (x) => (x.exercices[position.exercice]!.lest = lest))} />
       <NoteExercice fait={fait} onChange={(text) => update(brouillon, (x) => (x.exercices[position.exercice]!.note = text || undefined))} />
 
       <div className="row-actions">
@@ -352,6 +353,36 @@ export function Chrono({ secondes, onFin }: { secondes?: number; onFin: (s: numb
         Arrêter ({formatDuree(Math.floor(ecoule))})
       </button>
     </div>
+  );
+}
+
+/** Lest or élastique for this Exercice today, kept for the next time (Mini-boucle with a load, p. 77–79). */
+function LestExercice({ fait, onChange }: { fait: ExerciceFait; onChange: (lest: number | undefined) => void }) {
+  const [open, setOpen] = useState(fait.lest !== undefined);
+  if (!open)
+    return (
+      <button type="button" className="link" onClick={() => setOpen(true)}>
+        + lest ou élastique
+      </button>
+    );
+  return (
+    <label className="field">
+      <span className="field-label">Lest (kg)</span>
+      <span className="small">Négatif avec un élastique qui vous allège.</span>
+      <input
+        className="num"
+        type="number"
+        inputMode="decimal"
+        step="0.5"
+        min={-100}
+        max={200}
+        defaultValue={fait.lest ?? ''}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          onChange(e.target.value === '' || n === 0 || n < -100 || n > 200 ? undefined : n);
+        }}
+      />
+    </label>
   );
 }
 

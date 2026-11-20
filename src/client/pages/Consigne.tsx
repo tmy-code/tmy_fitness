@@ -3,6 +3,7 @@ import type { Carnet } from '../../shared/carnet.ts';
 import { consigneEffective, departEtape, exerciceActuel } from '../../shared/consigne.ts';
 import type { Methode } from '../../shared/methode.ts';
 import { derniereReprise, objectifsDuJour } from '../../shared/objectif.ts';
+import { enStagnation } from '../../shared/stagnation.ts';
 import { etapeDe } from '../../shared/progression.ts';
 import { newId } from '../api.ts';
 import { Layout, NotFound } from '../components.tsx';
@@ -78,6 +79,9 @@ export function ConsignePage({ methode, carnet, consigneId }: { methode: Methode
       )}
 
       <Remplacement methode={methode} actuel={exercice} prevu={consigne.exercice} remplace={exercice !== consigne.exercice && etapeDe(consigne, exercice) === -1} onChoose={setExercice} />
+      {enStagnation(exercice, carnet) ? (
+        <p className="banner banner-warn">Pas de nouveau record depuis 3 entraînements sur cet exercice : essayez la Mini-boucle ci-dessous (les autres exercices continuent normalement).</p>
+      ) : null}
       <MiniBoucle consigneId={consigne.id} series={consigne.series} objectifs={series.map((s) => s.objectif)} />
       <NotePerso exercice={exercice} carnet={carnet} />
     </Layout>
