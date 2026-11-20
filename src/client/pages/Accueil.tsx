@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { methode as methodeSchema, type Methode } from '../../shared/methode.ts';
 import type { Carnet } from '../../shared/carnet.ts';
 import { blocsFaitsDepuisDebut, etapeActuelle, ligneFrequence, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
+import { diagnosticNiveau, semainesDepuis } from '../../shared/stagnation.ts';
 import { Layout, NeedsConnection } from '../components.tsx';
 import { formatDate, pluriel, todayIso } from '../format.ts';
+import { nomExercice } from '../lookup.ts';
 import { loadMethode } from '../exercice-media.ts';
 import { useStore } from '../store.ts';
 
@@ -69,6 +71,9 @@ function Prochain({ methode, carnet, enCours }: { methode: Methode; carnet: Carn
   const faits = blocsFaitsDepuisDebut(partie, carnet.entrainements);
   const restants = partie.blocs.filter((b) => !faits.includes(b.id));
   const ligne = ligneFrequence(niveau, carnet, todayIso());
+  const etape = etapeActuelle(carnet.parcours);
+  const semaines = etape ? semainesDepuis(etape.debut, todayIso()) : 0;
+  const diagnostic = diagnosticNiveau(niveau, carnet);
   return (
     <section className="card">
       <p className="eyebrow">Prochain entraînement</p>
@@ -83,6 +88,18 @@ function Prochain({ methode, carnet, enCours }: { methode: Methode; carnet: Carn
           Fréquence conseillée : {ligne.libelle}
           {ligne.joursDepuis !== null ? ` · dernier entraînement ${ligne.joursDepuis === 0 ? "aujourd'hui" : `il y a ${pluriel(ligne.joursDepuis, 'jour', 'jours')}`}` : ''}
         </p>
+      ) : null}
+      {semaines >= 1 ? (
+        <p className="small">
+          Sur ce Niveau depuis {pluriel(semaines, 'semaine', 'semaines')}{semaines >= 8 ? ' (en général 4 à 8 semaines, mais restez tant que vous progressez)' : ''}.
+        </p>
+      ) : null}
+      {diagnostic.partout ? (
+        <p className="banner banner-warn">
+          Pas de progrès sur {diagnostic.bloques.length} exercices sur {diagnostic.total} : tentez d’abord une <a href="#/niveaux">Boucle</a>, puis changez la Fréquence, et seulement ensuite de Niveau.
+        </p>
+      ) : diagnostic.bloques.length > 0 ? (
+        <p className="small">À la traîne : {diagnostic.bloques.map((c) => nomExercice(methode, c)).join(', ')} — une Mini-boucle (sur l’écran de chaque exercice, dans Niveau) peut les débloquer.</p>
       ) : null}
       {enCours ? null : (
         <a className="button button-primary button-block" href="#/entrainement">

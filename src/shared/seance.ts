@@ -4,6 +4,16 @@ import type { Niveau, Partie } from './methode.ts';
 import { objectifsDuJour } from './objectif.ts';
 import { suggestionProgramme, suggestionProgression, type Suggestion } from './progression.ts';
 
+/** The lest used the last time this Exercice was done, so a new Entraînement starts with it. */
+export function dernierLest(exercice: string, entrainements: Entrainement[]): number | undefined {
+  const dernier = entrainements
+    .filter((e) => e.kind === 'entrainement' && e.termine)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .flatMap((e) => e.exercices.filter((x) => x.exercice === exercice))
+    .at(-1);
+  return dernier?.lest;
+}
+
 /**
  * A new Entraînement on a Séance or Programme, with each Série's Objectif du jour filled in.
  * `blocs` lists the Blocs to do today (a Split); all of them when omitted.
@@ -15,7 +25,8 @@ export function nouvelEntrainement(niveau: Niveau, partie: Partie, carnet: Carne
       const consigne = consigneEffective(c, carnet);
       const exercice = exerciceActuel(consigne, carnet);
       const { series } = objectifsDuJour(consigne, exercice, carnet.entrainements, carnet.reprises, departEtape(consigne, exercice));
-      return { ref: c.id, exercice, series: series.map((s) => ({ objectif: s.objectif, resultat: null, forcees: 0 })) };
+      const lest = dernierLest(exercice, carnet.entrainements);
+      return { ref: c.id, exercice, ...(lest ? { lest } : {}), series: series.map((s) => ({ objectif: s.objectif, resultat: null, forcees: 0 })) };
     }),
   );
   const split = blocs && chosen.length < partie.blocs.length ? { blocs: chosen.map((b) => b.id) } : {};

@@ -24,6 +24,8 @@ export const exerciceFait = z.object({
   /** The Exercice actually done. */
   exercice: exerciceCode,
   note: z.string().trim().max(500).optional(),
+  /** Added weight in kg for this Exercice today (lest); negative when an élastique lightens the body. Absent means none. */
+  lest: z.number().min(-100).max(200).optional(),
   series: z.array(serieFaite).max(20),
 });
 export type ExerciceFait = z.infer<typeof exerciceFait>;
