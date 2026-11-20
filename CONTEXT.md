@@ -118,6 +118,12 @@ Dropping the Objectif du jour of a single stalled Exercice to a lower starting n
 **Boucle augmentée**:
 A Niveau built as a structured review of earlier Niveaux (Niveau 11 and Niveau 20): a protocol chaining those Niveaux, shown as a list of steps, each startable as a Boucle.
 
+**Lest**:
+Weight added to an Exercice (or an élastique lightening the body, counted negative), noted per Entraînement; changing it restarts the Objectifs lower, like a Mini-boucle.
+
+**Période d'entretien**:
+Three to six months a year of lighter Entraînements at 80 % of one's best, to rest the nervous system and anchor progress; started and ended by the trainee in Réglages.
+
 **Plateau**:
 Séries meant to reach the same number of répétitions; the number only goes up once every Série has reached it (8-8-8-7-7-6 aims for 8 everywhere, not 9).
 

@@ -73,7 +73,7 @@ function Prochain({ methode, carnet, enCours }: { methode: Methode; carnet: Carn
   const ligne = ligneFrequence(niveau, carnet, todayIso());
   const etape = etapeActuelle(carnet.parcours);
   const semaines = etape ? semainesDepuis(etape.debut, todayIso()) : 0;
-  const diagnostic = diagnosticNiveau(niveau, carnet);
+  const diagnostic = carnet.reglages.entretien ? { bloques: [], total: 0, partout: false } : diagnosticNiveau(niveau, carnet);
   return (
     <section className="card">
       <p className="eyebrow">Prochain entraînement</p>
@@ -87,6 +87,11 @@ function Prochain({ methode, carnet, enCours }: { methode: Methode; carnet: Carn
         <p className={ligne.jourEntrainement ? 'ok small' : 'muted small'}>
           Fréquence conseillée : {ligne.libelle}
           {ligne.joursDepuis !== null ? ` · dernier entraînement ${ligne.joursDepuis === 0 ? "aujourd'hui" : `il y a ${pluriel(ligne.joursDepuis, 'jour', 'jours')}`}` : ''}
+        </p>
+      ) : null}
+      {carnet.reglages.entretien ? (
+        <p className="small">
+          Période d’entretien depuis {pluriel(semainesDepuis(carnet.reglages.entretien.debut, todayIso()), 'semaine', 'semaines')} : objectifs à 80 % de vos meilleurs résultats (3 à 6 mois conseillés).
         </p>
       ) : null}
       {semaines >= 1 ? (

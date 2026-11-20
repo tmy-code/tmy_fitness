@@ -88,6 +88,8 @@ export type Ajustement = z.infer<typeof ajustement>;
 export const reglages = z.object({
   /** The trainee's own Fréquence, replacing the Niveau's recommendation. */
   frequence: frequence.nullable(),
+  /** A period of lighter Entraînements at 80 % of one's best (p. 82); absent or null when none is running. */
+  entretien: z.object({ debut: isoDate }).nullable().optional(),
 });
 export type Reglages = z.infer<typeof reglages>;
 

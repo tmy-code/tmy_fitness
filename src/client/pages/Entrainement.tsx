@@ -6,7 +6,7 @@ import { objectifsDuJour } from '../../shared/objectif.ts';
 import { terminerEntrainement } from '../../shared/parcours.ts';
 import { blocsFaitsDepuisDebut, blocsProposes, niveauActuel, prochainePartie } from '../../shared/prochain.ts';
 import { etapeDe } from '../../shared/progression.ts';
-import { nouvelEntrainement, reposApres, serieCourante, suggestionsFin } from '../../shared/seance.ts';
+import { nouvelEntrainement, objectifsAvecReglages, reposApres, serieCourante, suggestionsFin } from '../../shared/seance.ts';
 import { newId } from '../api.ts';
 import { Layout, Stepper } from '../components.tsx';
 import { preparerSon, signalFinRepos, useEcranAllume } from '../device.ts';
@@ -136,7 +136,7 @@ function EnCours({
   const where = lieu.get(fait.ref);
   if (!where) return <p className="banner banner-error">Consigne introuvable dans la Méthode.</p>;
   const consigne = consigneEffective(where.consigne, carnet);
-  const { series: objectifs } = objectifsDuJour(consigne, fait.exercice, carnet.entrainements, carnet.reprises);
+  const { series: objectifs } = objectifsAvecReglages(consigne, fait.exercice, carnet, fait.lest);
   const cible = consigne.series[position.serie]?.cible ?? { type: 'max' as const };
   const serie = fait.series[position.serie]!;
   const aBattre = objectifs[position.serie]?.aBattre ?? null;
@@ -205,7 +205,21 @@ function EnCours({
         }}
       />
 
-      <LestExercice key={position.exercice} fait={fait} onChange={(lest) => update(brouillon, (x) => (x.exercices[position.exercice]!.lest = lest))} />
+      <LestExercice
+        key={position.exercice}
+        fait={fait}
+        onChange={(lest) =>
+          update(brouillon, (x) => {
+            const cible = x.exercices[position.exercice]!;
+            cible.lest = lest;
+            // A new lest restarts the climb lower (like a Mini-boucle): refresh the Séries not done yet.
+            const { series: nouveaux } = objectifsAvecReglages(consigne, cible.exercice, carnet, lest);
+            cible.series.forEach((s, i) => {
+              if (s.resultat === null && nouveaux[i]) s.objectif = nouveaux[i]!.objectif;
+            });
+          })
+        }
+      />
       <NoteExercice fait={fait} onChange={(text) => update(brouillon, (x) => (x.exercices[position.exercice]!.note = text || undefined))} />
 
       <div className="row-actions">
