@@ -1,6 +1,6 @@
 # TMY Fitness
 
-Workspace rules (hard rules, task size, PR and NAS workflow, handoff between Claude Code and Codex): `C:\Projects\AGENTS.md`. Read it first if you have not.
+Workspace rules (hard rules, task size, PR and NAS workflow, handoff between Claude Code and Codex): `<workspace>\AGENTS.md`. Read it first if you have not. `<workspace>` is the workspace root: the `tmy_workspace` checkout this repo is cloned in (`..` from here), at any path.
 
 ## Docs: read only what the task needs
 
